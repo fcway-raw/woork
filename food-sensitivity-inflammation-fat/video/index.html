@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>食物敏感 → 发炎 → 内脏脂肪？</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--cream:#faf7f2;--ink:#2b2b2b;--g:#43a047;--y:#f0b429;--r:#e57373;--b:#5c85d6}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:#1c1c1c;overflow:hidden;
+ font-family:"WenQuanYi Zen Hei","Noto Sans SC",sans-serif,"Noto Color Emoji"}
+#wrap{position:absolute;left:0;top:0;width:100%;height:100%}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;background:var(--cream);overflow:hidden;transform-origin:0 0;color:var(--ink)}
+#svg{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#svg text{font-weight:700;font-family:inherit}
+#chip{position:absolute;left:36px;top:28px;background:var(--b);color:#fff;font-size:34px;padding:8px 28px;border-radius:40px;white-space:nowrap;box-shadow:0 4px 0 rgba(0,0,0,.12)}
+#badges{position:absolute;right:36px;top:28px;display:flex;flex-direction:row;justify-content:flex-end;gap:12px}
+.badge{background:#fff;border:4px solid var(--b);border-radius:36px;padding:6px 22px;font-size:32px;white-space:nowrap;box-shadow:0 4px 0 rgba(0,0,0,.1)}
+.badge.animal{border-color:#e0904a}.badge.cell{border-color:#9b6bd6}.badge.human{border-color:#5c85d6}.badge.case{border-color:#43a047}
+.badge small{font-size:26px;color:#666;margin-left:8px}
+#banner{position:absolute;left:0;width:1920px;text-align:center;top:118px;height:112px;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#banner span{display:inline-block;white-space:nowrap;background:rgba(255,255,255,.78);border-radius:40px;padding:6px 44px;font-weight:700;line-height:1.25}
+#banner.card span{background:#fff;border:9px solid var(--c,#f0b429);box-shadow:0 8px 0 rgba(0,0,0,.10);padding:8px 56px;border-radius:44px}
+#banner b{color:var(--c,#2b2b2b)}
+#sub{position:absolute;left:0;width:1920px;bottom:44px;display:flex;justify-content:center;pointer-events:none}
+#sub div{max-width:1700px;background:rgba(30,30,30,.74);color:#fff;font-size:38px;line-height:1.42;padding:16px 44px;border-radius:30px;text-align:center}
+#sub b{color:#ffd54f}
+#prog{position:absolute;left:0;bottom:0;width:1920px;height:10px;background:rgba(0,0,0,.10)}
+#progbar{height:100%;width:0;background:var(--b)}
+#prog i{position:absolute;top:0;width:3px;height:100%;background:#fff;opacity:.8}
+/* player UI (hidden in render mode) */
+#ui{position:fixed;left:0;right:0;bottom:0;height:56px;background:#222;color:#eee;display:flex;align-items:center;gap:10px;padding:0 14px;font:15px sans-serif,"WenQuanYi Zen Hei";z-index:9}
+#ui button{background:#444;color:#fff;border:0;border-radius:6px;padding:6px 12px;cursor:pointer;font:inherit}
+#ui button.on{background:var(--b)}
+#ui input{flex:1}
+#scenes{display:flex;gap:6px}
+body.render #ui{display:none}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+ <svg id="svg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+ <div id="chip"></div>
+ <div id="badges"></div>
+ <div id="banner"><span></span></div>
+ <div id="sub"><div></div></div>
+ <div id="prog"><div id="progbar"></div></div>
+</div></div>
+<div id="ui"><button id="pp">▶ 播放</button><span id="tm">0:00</span><input id="rng" type="range" min="0" max="240" step="0.04" value="0"><div id="scenes"></div></div>
+<script>
+/* ===================================================================
+   DATA — 场景 / 分镜数据（改字幕、屏幕字、证据徽章就改这里）
+   每个场景：start/end（秒，来自脚本）；每个 beat：
+     sub   = 旁白（作为字幕，**粗体** 会高亮）
+     text  = 屏幕字（大字标签，可为空）
+     badge = 证据徽章 [[类型, 引用], ...]  类型：animal 🐭 / cell 🧫 / human 👥 / case 👤
+     card  = 标题卡颜色 'red' | 'yellow' | 'green'（可选）
+     pos   = 'center' 屏幕字放画面中央（可选）
+   beat 的起止时间会按旁白字数在场景时间内自动分配（每条至少 3.5 秒）。
+   =================================================================== */
+const DURATION = 240;
+const SCENES = [
+ {id:0, chip:'🎬 我们听到的故事', start:0, end:30, beats:[
+  {sub:'最近市场上很多人在讲“身体发炎”。', text:'🔥 30+ 博主'},
+  {sub:'他们说：睡够了还累、反酸烧心、皮肤变深、伤口好得慢……都是因为身体在发炎。', text:'😴 累 · 🔥 反酸 · 🟤 皮肤变深 · 🩹 伤口慢好'},
+  {sub:'还有医生分享：验出敏感食物、全部停掉，一个月内脏脂肪就降了。', text:'🧪 → 🚫 → ⬇️'},
+  {sub:'所以大家都在问：**食物敏感、发炎、内脏脂肪，到底是不是一条链？**', text:'**食物敏感 → 发炎 → 内脏脂肪？**'},
+ ]},
+ {id:1, chip:'🧩 拆成 3 个问题', start:30, end:50, beats:[
+  {sub:'我把这条链拆成三个问题，逐个查研究。', text:'❓1 · ❓2 · ❓3'},
+  {sub:'先看结果：', text:''},
+  {sub:'一、“食物敏感”能验出来吗？——目前不行。', text:'❓1 能验出来吗？🔴'},
+  {sub:'二、食物能让身体发炎吗？——有线索。', text:'❓2 食物会点火吗？🟡'},
+  {sub:'三、发炎和内脏脂肪有关吗？——有关，而且机制越来越清楚。', text:'❓3 连到内脏脂肪？🟢'},
+ ]},
+ {id:2, chip:'❓1 “食物敏感”到底是什么？', start:50, end:90, beats:[
+  {sub:'“食物敏感”这个词，其实混了四种不同的东西。', text:'🚨 过敏 · 😣 不耐受 · 🤷 敏感 · 🔥 低度发炎'},
+  {sub:'过敏：一吃就痒、就肿，反应很快，医生验得出来。', text:'🚨 IgE · 有检测'},
+  {sub:'不耐受：身体消化不了，比如乳糖。', text:'😣 消化问题'},
+  {sub:'“敏感”：说不清的不舒服，没有标准定义。', text:'🤷 没有定义'},
+  {sub:'低度发炎：你没感觉，但身体一直在小火慢烧。', text:'🔥 没感觉'},
+  {sub:'市面上的敏感检测测的是 IgG 抗体。研究发现，健康的人也有，而且通常对**最常吃**的食物最高。', text:'📋 登记簿：记录“来过”', badge:[['human','Garmendia 2025 · AAAAI']]},
+  {sub:'一项双盲试吃研究里，45 个验出 IgG 的人吃了那些食物，**没有一个**出现反应。', text:'👥 45 人 → 0 人有反应', badge:[['human','Gocki 2016 · Antico 2011']]},
+  {sub:'所以第一个发现：IgG 比较像“你常吃什么”，不能证明“这个食物在伤害你”。', text:'**IgG = 吃过，≠ 有害** 🔴', card:'red'},
+ ]},
+ {id:3, chip:'❓2 食物能让身体发炎吗？', start:90, end:130, beats:[
+  {sub:'可以，目前看到两条路。', text:'两条路'},
+  {sub:'第一条：**吃法**。研究让健康男性吃一餐高脂餐，4 小时内血液里的细菌碎片增加了大约五成。', text:'👥 高脂餐 → 4 小时后', badge:[['human','Erridge 2007']]},
+  {sub:'这些细菌碎片会点起发炎。研究者把它叫做“餐后发炎”。', text:'🔥 餐后发炎', badge:[['human','Erridge 2007']]},
+  {sub:'第二条：**免疫系统“不认得”某种食物**。这个在老鼠身上看得很清楚，下一幕细讲。', text:'🐭 下一幕', badge:[['animal','下一幕细讲']]},
+  {sub:'人体研究也看到：食物 IgG 越高的人，肠道“漏”的指标也越高。但谁先谁后，还不知道。', text:'👥 Vita 2022 · 🟡 方向不明', badge:[['human','Vita 2022']]},
+  {sub:'第二个发现：食物“可能”点火，但证据多指向**吃的方式**，而不是某一种食物。', text:'**会点火的是吃法，不一定是某个食物** 🟡', card:'yellow'},
+ ]},
+ {id:4, chip:'❓3 发炎怎么连到内脏脂肪？⭐', start:130, end:190, beats:[
+  {sub:'这是整个研究里最有意思的部分。吃下一餐比较油的食物，身体会把脂肪打包成“脂肪巴士”。研究发现，少量食物蛋白也会搭上车。', text:'🚌 **脂肪巴士** 🐭', badge:[['animal','Wang 2010']]},
+  {sub:'巴士最先停靠的，就是贴着肠道的**内脏脂肪**。皮下脂肪几乎没有反应。', text:'📍 内脏脂肪 > 皮下脂肪', badge:[['animal','Wang 2010']]},
+  {sub:'免疫系统会检查：这个乘客，我认不认得？', text:'🛡️ 认得吗？', badge:[['animal','Wang 2010']]},
+  {sub:'认得，就相安无事。大部分时候都是这样。', text:'✅ 耐受 → 没事', badge:[['animal','Wang 2010']]},
+  {sub:'如果免疫系统已经“不认”这种食物，警卫就会聚集在脂肪里。', text:'❌ 致敏 → 警卫聚集', badge:[['animal','Wang 2010']]},
+  {sub:'脂肪开始小火慢烧。攻击型的免疫细胞变多，负责修复的变少。', text:'⚔️↑ 🔧↓', badge:[['animal','Wang 2010 · Jung 2014']]},
+  {sub:'结果，胰岛素这把钥匙变得不灵，血糖越来越难控制。', text:'🔑 卡住', badge:[['animal','Jung 2014']]},
+  {sub:'但有个反转：这些老鼠的体重和脂肪**没有变多**。', text:'⚖️ 体重一样', badge:[['animal','Wang 2010']]},
+  {sub:'变的是脂肪的“质量”：同一个仓库没有变大，只是里面开始冒烟。', text:'🏭 **不是变多，是变坏**', badge:[['animal','Wang 2010']]},
+  {sub:'细胞实验还补了一块：过敏型的发炎信号，会让脂肪细胞更会囤油、更不肯燃烧。', text:'🧫 细胞实验，未在人体证实', badge:[['cell','Szczepankiewicz 2018']]},
+  {sub:'回到人身上：内脏脂肪越多，发炎指标越高，这是人体研究一再看到的。肥胖青少年里，食物 IgG 也和发炎指标一起偏高。', text:'👥 PREDIMED-Plus · 👥 Wilders-Truschnig 2008', badge:[['human','Castro-Barquero 2023 · Wilders-Truschnig 2008']]},
+  {sub:'第三个发现：食物 → 腹部脂肪发炎 → 钥匙卡住，这条路在老鼠身上完整；在人身上，只看到“会一起出现”。', text:'**老鼠：完整 🐭 · 人：一起出现 👥** 🟡', card:'yellow', badge:[['animal','Wang 2010 · Jung 2014'],['human','Castro-Barquero 2023']]},
+ ]},
+ {id:5, chip:'🩺 回头看医生的案例', start:190, end:215, beats:[
+  {sub:'那医生的案例怎么解释？验出来最常“敏感”的，通常是小麦、奶、蛋——正好是我们最常吃的东西。', text:'🍞🥛🥚'},
+  {sub:'全部停掉，面包、蛋糕、奶茶也一起没了。吃得更少、更原型，内脏脂肪自然会降。', text:'🍰🧋 ✖️'},
+  {sub:'效果可能是真的，但原因比较可能是“吃法改变”，而不是“过敏减少”。', text:'**有效 ≠ 因为敏感**'},
+ ]},
+ {id:6, chip:'✅ 我的结论', start:215, end:240, beats:[
+  {sub:'总结三个发现：', text:''},
+  {sub:'一、敏感检测验不出“伤害你的食物”。', text:'🔴 IgG ≠ 有害'},
+  {sub:'二、食物能点火，比较确定的是“吃的方式”。', text:'🟡 吃法会点火'},
+  {sub:'三、内脏脂肪会发炎、会变坏，这是最站得住的一段。', text:'🟢 脂肪会变坏'},
+  {sub:'好消息是：内脏脂肪减少，发炎指标会跟着降，肠道屏障也会变好。这个循环可以反过来转。', text:'🔁 👥', badge:[['human','']]},
+  {sub:'所以对我们来说，切入点不是“过敏”，而是“低度发炎”。', text:'**切入点：低度发炎，不是过敏**', card:'green', pos:'center'},
+ ]},
+];
+window.__DURATION = DURATION;
+/* ===================== 引擎工具 & 角色（SVG） ===================== */
+const NS='http://www.w3.org/2000/svg';
+const C={cream:'#faf7f2',ink:'#2b2b2b',g:'#43a047',y:'#f0b429',r:'#e57373',b:'#5c85d6',purple:'#9b6bd6',gold:'#e0a82e'};
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const eo=t=>1-Math.pow(1-clamp(t),3);
+const eio=t=>{t=clamp(t);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2};
+const ebk=t=>{t=clamp(t);const c1=1.9,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)};
+const seg=(lt,a,d)=>clamp((lt-a)/d);
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const T=(s,fs=40,fill=C.ink,x=0,y=0,ex='')=>`<text x="${x}" y="${y}" font-size="${fs}" fill="${fill}" text-anchor="middle" dominant-baseline="central" ${ex}>${s}</text>`;
+
+let CUR=null;
+/* add(svgHtml,{x,y,s,rot,at,out,kind,dur,tick})  时间均为“场景内秒” */
+function add(html,o={}){
+  const g=document.createElementNS(NS,'g');
+  g.innerHTML=html;
+  g.style.display='none';
+  CUR.root.appendChild(g);
+  const e=Object.assign({g,x:0,y:0,s:1,sx:1,rot:0,at:0,out:null,kind:'pop',dur:.5,tick:null},o);
+  e.q=[...g.querySelectorAll('[data-a]')];
+  CUR.els.push(e);
+  return e;
+}
+function updEl(e,lt){
+  const vis=lt>=e.at && (e.out==null || lt<e.out+.35);
+  if(!vis){e.g.style.display='none';return;}
+  e.g.style.display='';
+  const p=clamp((lt-e.at)/e.dur);
+  let op=1,sc=1,dx=0,dy=0,rot=e.rot,sx=e.sx;
+  const k=eo(p);
+  switch(e.kind){
+    case 'pop':sc=ebk(p);op=Math.min(1,p*4);break;
+    case 'up':dy=(1-k)*80;op=k;break;
+    case 'down':dy=-(1-k)*80;op=k;break;
+    case 'left':dx=-(1-k)*260;op=k;break;
+    case 'right':dx=(1-k)*260;op=k;break;
+    case 'drop':dy=-(1-k)*300;op=Math.min(1,p*4);break;
+    case 'fade':op=p;break;
+    case 'zoom':sc=lerp(.5,1,k);op=k;break;
+    case 'none':break;
+  }
+  if(e.out!=null && lt>e.out){const q=clamp((lt-e.out)/.3);op*=1-q;if(e.outKind==='shrink')sc*=1-q;}
+  if(e.tick){
+    const r=e.tick(lt-e.at,e,lt)||{};
+    if(r.dx)dx+=r.dx;if(r.dy)dy+=r.dy;if(r.rot)rot+=r.rot;
+    if(r.ds!=null)sc*=r.ds;if(r.op!=null)op*=r.op;if(r.sx!=null)sx*=r.sx;
+  }
+  e.g.setAttribute('transform',`translate(${(e.x+dx).toFixed(2)} ${(e.y+dy).toFixed(2)}) rotate(${rot.toFixed(2)}) scale(${(e.s*sc*sx).toFixed(4)} ${(e.s*sc).toFixed(4)})`);
+  e.g.setAttribute('opacity',op.toFixed(3));
+}
+const arrow=(x1,y1,x2,y2,col=C.ink,w=8)=>{const a=Math.atan2(y2-y1,x2-x1),h=w*2.8;const bx=x2-Math.cos(a)*h*.6,by=y2-Math.sin(a)*h*.6;
+  return `<line x1="${x1}" y1="${y1}" x2="${bx}" y2="${by}" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/><polygon points="${x2},${y2} ${x2-Math.cos(a-.5)*h},${y2-Math.sin(a-.5)*h} ${x2-Math.cos(a+.5)*h},${y2-Math.sin(a+.5)*h}" fill="${col}"/>`};
+const xmark=(sz=60,col=C.r,w=16)=>`<g stroke="${col}" stroke-width="${w}" stroke-linecap="round"><line x1="${-sz}" y1="${-sz}" x2="${sz}" y2="${sz}"/><line x1="${sz}" y1="${-sz}" x2="${-sz}" y2="${sz}"/></g>`;
+const check=(sz=60,col=C.g,w=16)=>`<polyline points="${-sz},0 ${-sz*.3},${sz*.7} ${sz},${-sz*.7}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+/* ---------- 小脂 ---------- */
+function fatCell(r=80,mood='happy'){
+  const hot=mood==='hot';
+  return `<g>
+  <ellipse cx="${-r*.42}" cy="${r*.98}" rx="${r*.28}" ry="${r*.14}" fill="#e0a82e"/><ellipse cx="${r*.42}" cy="${r*.98}" rx="${r*.28}" ry="${r*.14}" fill="#e0a82e"/>
+  <circle r="${r}" fill="${hot?'#f2b13c':'#f8d14f'}" stroke="#d99a1e" stroke-width="${r*.06}"/>
+  <ellipse cx="${-r*.42}" cy="${-r*.58}" rx="${r*.2}" ry="${r*.1}" fill="#fff" opacity=".5" transform="rotate(-35 ${-r*.42} ${-r*.58})"/>
+  <circle cx="${-r*.33}" cy="${-r*.08}" r="${r*.1}" fill="#2b2b2b"/><circle cx="${r*.33}" cy="${-r*.08}" r="${r*.1}" fill="#2b2b2b"/>
+  <circle cx="${-r*.3}" cy="${-r*.12}" r="${r*.035}" fill="#fff"/><circle cx="${r*.36}" cy="${-r*.12}" r="${r*.035}" fill="#fff"/>
+  <circle cx="${-r*.58}" cy="${r*.2}" r="${r*.17}" fill="${hot?'#e04b4b':'#ff9e80'}" opacity="${hot?.95:.6}"/><circle cx="${r*.58}" cy="${r*.2}" r="${r*.17}" fill="${hot?'#e04b4b':'#ff9e80'}" opacity="${hot?.95:.6}"/>
+  ${hot?`<path d="M${-r*.2} ${r*.42} Q0 ${r*.22} ${r*.2} ${r*.42}" fill="none" stroke="#2b2b2b" stroke-width="${r*.05}" stroke-linecap="round"/>
+  <path d="M${-r*.5} ${-r*.3} L${-r*.18} ${-r*.22}" stroke="#2b2b2b" stroke-width="${r*.05}" stroke-linecap="round"/><path d="M${r*.5} ${-r*.3} L${r*.18} ${-r*.22}" stroke="#2b2b2b" stroke-width="${r*.05}" stroke-linecap="round"/>
+  <path d="M${r*.78} ${-r*.35} q${r*.1} ${r*.16} 0 ${r*.24} q${-r*.1} ${-r*.08} 0 ${-r*.24}z" fill="#8fd3f4"/>`
+  :`<path d="M${-r*.22} ${r*.2} Q0 ${r*.44} ${r*.22} ${r*.2}" fill="none" stroke="#2b2b2b" stroke-width="${r*.05}" stroke-linecap="round"/>`}
+  </g>`;
+}
+const smokeHtml=()=>[0,1,2].map(i=>`<path data-a="s" d="M0 0 c 20 -16 -20 -30 0 -46 s 20 -30 0 -46" fill="none" stroke="#9aa0a6" stroke-width="10" stroke-linecap="round"/>`).join('');
+function smokeTick(lt,e,spd=.45,h=140){e.q.forEach((p,i)=>{const ph=((lt*spd+i/3)%1+1)%1;p.setAttribute('transform',`translate(${((i-1)*30+Math.sin(ph*7+i*2)*8).toFixed(1)} ${(-ph*h).toFixed(1)}) scale(${(.6+ph*.6).toFixed(3)})`);p.setAttribute('opacity',(Math.sin(Math.PI*ph)*.8).toFixed(3));});}
+function flame(){return `<g><path d="M0 -70 C 8 -45 34 -35 30 -12 C 27 6 12 12 0 12 C -12 12 -27 6 -30 -12 C -34 -35 -8 -45 0 -70Z" fill="#f39c3d"/><path d="M0 -38 C 5 -25 18 -20 16 -6 C 14 4 6 7 0 7 C -6 7 -14 4 -16 -6 C -18 -20 -5 -25 0 -38Z" fill="#ffd54f"/></g>`}
+const flick=(lt)=>({ds:1+Math.sin(lt*9)*.06,rot:Math.sin(lt*7)*4});
+
+/* ---------- 人物 ---------- */
+function person(col='#9b6bd6',head='#c9a0ff'){ // 蛋白质小乘客：原点在脚底，高约 80
+  return `<g><rect x="-13" y="-52" width="26" height="40" rx="12" fill="${col}"/><rect x="-11" y="-14" width="9" height="14" rx="4" fill="${col}"/><rect x="2" y="-14" width="9" height="14" rx="4" fill="${col}"/>
+  <circle cy="-68" r="16" fill="${head}" stroke="${col}" stroke-width="3"/><circle cx="-5" cy="-70" r="2.4" fill="#2b2b2b"/><circle cx="5" cy="-70" r="2.4" fill="#2b2b2b"/><path d="M-5 -62 q5 4 10 0" fill="none" stroke="#2b2b2b" stroke-width="2"/></g>`;
+}
+function guard(type='atk'){ // 免疫警卫，脚底原点，高约 140
+  const w=type==='atk'
+   ?`<line x1="34" y1="-20" x2="34" y2="-150" stroke="#a9744a" stroke-width="6" stroke-linecap="round"/><polygon points="34,-176 22,-146 46,-146" fill="#e04b4b" stroke="#b83a3a" stroke-width="3"/>`
+   :`<g transform="translate(34 -70) rotate(20)"><rect x="-5" y="-10" width="10" height="90" rx="5" fill="#2e7d32"/><circle cy="-20" r="20" fill="#43a047"/><rect x="-7" y="-46" width="14" height="24" fill="${C.cream}"/></g>`;
+  return `<g><rect x="-17" y="-40" width="14" height="40" rx="6" fill="#3d63b8"/><rect x="3" y="-40" width="14" height="40" rx="6" fill="#3d63b8"/>
+  <rect x="-26" y="-98" width="52" height="64" rx="20" fill="#5c85d6" stroke="#3d63b8" stroke-width="4"/>
+  <rect x="-26" y="-64" width="52" height="8" fill="#f0b429"/>
+  <circle cy="-118" r="24" fill="#ffe0b8" stroke="#e0b98a" stroke-width="3"/><path d="M-27 -120 A27 27 0 0 1 27 -120 Z" fill="#3d63b8"/><rect x="-30" y="-122" width="60" height="7" rx="3" fill="#2f4f96"/>
+  <circle cx="-8" cy="-112" r="3" fill="#2b2b2b"/><circle cx="8" cy="-112" r="3" fill="#2b2b2b"/><path d="M-7 -104 q7 6 14 0" fill="none" stroke="#2b2b2b" stroke-width="2.4" stroke-linecap="round"/>${w}</g>`;
+}
+function doctor(){
+  return `<g><rect x="-36" y="-70" width="30" height="70" rx="12" fill="#546e7a"/><rect x="6" y="-70" width="30" height="70" rx="12" fill="#546e7a"/>
+  <rect x="-56" y="-260" width="112" height="200" rx="40" fill="#fff" stroke="#cfd8dc" stroke-width="5"/>
+  <path d="M-24 -258 L0 -212 L24 -258Z" fill="#5c85d6"/>
+  <path d="M-28 -240 Q-38 -190 0 -186 Q38 -190 28 -240" fill="none" stroke="#546e7a" stroke-width="5"/><circle cy="-184" r="9" fill="#90a4ae"/>
+  <circle cy="-312" r="50" fill="#ffe0b8" stroke="#e0b98a" stroke-width="4"/><path d="M-52 -318 Q-50 -370 0 -368 Q50 -370 52 -318 Q30 -345 0 -344 Q-30 -345 -52 -318Z" fill="#5d4037"/>
+  <circle cx="-18" cy="-312" r="5" fill="#2b2b2b"/><circle cx="18" cy="-312" r="5" fill="#2b2b2b"/><path d="M-14 -292 q14 12 28 0" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/>
+  <g transform="translate(62 -196) rotate(12)"><rect x="-4" y="-20" width="64" height="86" rx="8" fill="#fff8e1" stroke="#a1887f" stroke-width="4"/><rect x="12" y="-28" width="30" height="14" rx="5" fill="#a1887f"/><line x1="10" y1="10" x2="48" y2="10" stroke="#bbb" stroke-width="4"/><line x1="10" y1="28" x2="48" y2="28" stroke="#bbb" stroke-width="4"/><line x1="10" y1="46" x2="36" y2="46" stroke="#bbb" stroke-width="4"/></g></g>`;
+}
+function human(o={}){ // 躯干中心为原点，头在上
+  const {mood='neutral',shirt='#7cb3e8'}=o;
+  let mouth=`<line x1="-20" y1="-152" x2="20" y2="-152" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/>`;
+  if(mood==='swollen')mouth=`<ellipse cx="0" cy="-150" rx="34" ry="20" fill="#e04b4b" stroke="#b83a3a" stroke-width="4"/><path d="M-30 -150 H30" stroke="#b83a3a" stroke-width="4"/><ellipse cx="-10" cy="-158" rx="10" ry="4" fill="#fff" opacity=".5"/>`;
+  if(mood==='bloat')mouth=`<path d="M-24 -146 q8 -12 16 0 q8 12 16 0 q8 -12 16 0" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/>`;
+  if(mood==='happy')mouth=`<path d="M-24 -156 Q0 -132 24 -156" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/>`;
+  return `<g><rect x="-95" y="-100" width="190" height="270" rx="80" fill="${shirt}" stroke="#4f86c0" stroke-width="5"/>
+  <circle cy="-190" r="78" fill="#ffd9b3" stroke="#e0b58a" stroke-width="5"/>
+  <path d="M-78 -205 Q-70 -275 0 -272 Q70 -275 78 -205 Q40 -240 0 -238 Q-40 -240 -78 -205Z" fill="#5d4037"/>
+  <circle cx="-28" cy="-200" r="8" fill="#2b2b2b"/><circle cx="28" cy="-200" r="8" fill="#2b2b2b"/>${mood==='swollen'?'':''}${mouth}</g>`;
+}
+function mouse(){
+  return `<g><path d="M-62 10 Q-130 20 -120 -40 Q-118 -70 -90 -60" fill="none" stroke="#f4a6a0" stroke-width="7" stroke-linecap="round"/>
+  <ellipse cx="0" cy="0" rx="72" ry="48" fill="#b0bec5" stroke="#78909c" stroke-width="5"/>
+  <circle cx="58" cy="-14" r="36" fill="#b0bec5" stroke="#78909c" stroke-width="5"/>
+  <circle cx="44" cy="-48" r="20" fill="#f8bbd0" stroke="#78909c" stroke-width="4"/><circle cx="70" cy="-50" r="16" fill="#f8bbd0" stroke="#78909c" stroke-width="4"/>
+  <circle cx="66" cy="-20" r="5" fill="#2b2b2b"/><circle cx="92" cy="-6" r="6" fill="#f06292"/>
+  <path d="M82 -4 l32 -8 M82 2 l34 4" stroke="#78909c" stroke-width="3"/>
+  <ellipse cx="-30" cy="46" rx="18" ry="9" fill="#90a4ae"/><ellipse cx="30" cy="46" rx="18" ry="9" fill="#90a4ae"/></g>`;
+}
+function bus(){
+  const win=[-134,-64,6,76].map(x=>`<rect x="${x}" y="-128" width="56" height="50" rx="10" fill="#d8ecfb"/>`).join('');
+  const P=[-106,-36,34].map(x=>`<g data-a="P" opacity="0"><circle cx="${x}" cy="-104" r="13" fill="#c9a0ff" stroke="#9b6bd6" stroke-width="3"/><path d="M${x-17} -78 a17 17 0 0 1 34 0z" fill="#9b6bd6"/></g>`).join('');
+  const D=[-100,-40,20,80].map(x=>`<path data-a="D" opacity="0" transform="translate(${x} -168)" d="M0 -22 C 14 -2 16 6 16 12 A16 16 0 0 1 -16 12 C -16 6 -14 -2 0 -22Z" fill="#ffd54f" stroke="#e0a82e" stroke-width="3"/>`).join('');
+  return `<g><rect x="-160" y="-146" width="320" height="126" rx="32" fill="#f7c948" stroke="#d99a1e" stroke-width="6"/>${win}
+  <rect x="80" y="-128" width="66" height="50" rx="10" fill="#d8ecfb"/><rect x="-160" y="-66" width="320" height="14" fill="#f0a72a"/>
+  <rect x="-120" y="-176" width="240" height="14" rx="7" fill="#d99a1e"/>
+  <circle cx="-95" cy="-8" r="30" fill="#37474f"/><circle cx="-95" cy="-8" r="12" fill="#b0bec5"/><circle cx="95" cy="-8" r="30" fill="#37474f"/><circle cx="95" cy="-8" r="12" fill="#b0bec5"/>
+  <circle cx="152" cy="-52" r="9" fill="#fff59d"/>${P}${D}</g>`;
+}
+const dropSVG=(s=1)=>`<path transform="scale(${s})" d="M0 -22 C 14 -2 16 6 16 12 A16 16 0 0 1 -16 12 C -16 6 -14 -2 0 -22Z" fill="#ffd54f" stroke="#e0a82e" stroke-width="3"/>`;
+function keyHtml(){
+  return `<g><circle r="36" fill="#f0c040" stroke="#c9961e" stroke-width="6"/><circle r="14" fill="${C.cream}" stroke="#c9961e" stroke-width="4"/>
+  <rect x="34" y="-10" width="150" height="20" rx="8" fill="#f0c040" stroke="#c9961e" stroke-width="5"/><rect x="132" y="8" width="16" height="26" fill="#f0c040" stroke="#c9961e" stroke-width="5"/><rect x="158" y="8" width="16" height="20" fill="#f0c040" stroke="#c9961e" stroke-width="5"/></g>`;
+}
+function lockHtml(){ // 锁体中心 (0,0)
+  return `<g><g data-a="sh"><path d="M-44 -50 v-46 a44 44 0 0 1 88 0 v46" fill="none" stroke="#90a4ae" stroke-width="20" stroke-linecap="round"/></g>
+  <rect x="-90" y="-56" width="180" height="150" rx="26" fill="#78909c" stroke="#546e7a" stroke-width="6"/><circle cx="-2" cy="14" r="18" fill="#37474f"/><rect x="-8" y="14" width="12" height="40" rx="5" fill="#37474f"/></g>`;
+}
+function report(){
+  return `<g><rect x="-150" y="-200" width="300" height="400" rx="22" fill="#fff" stroke="#cfc8bb" stroke-width="6"/>${T('IgG 检测报告',34,C.ink,0,-158)}
+  ${[['#e57373',-80],['#f0b429',0],['#43a047',80]].map(([c,y])=>`<circle cx="-92" cy="${y}" r="24" fill="${c}"/><rect x="-52" y="${y-13}" width="150" height="26" rx="13" fill="#e3ddd0"/>`).join('')}
+  <rect x="-100" y="140" width="200" height="30" rx="15" fill="#e3ddd0"/></g>`;
+}
+function ledger(){
+  return `<g><rect x="-150" y="-200" width="300" height="400" rx="22" fill="#fff3d6" stroke="#b8894a" stroke-width="6"/><rect x="-150" y="-200" width="46" height="400" rx="22" fill="#b8894a"/>
+  ${[-150,-90,-30,30,90,150].map(y=>`<circle cx="-127" cy="${y}" r="9" fill="#fff3d6"/>`).join('')}
+  ${T('访客登记簿',34,'#7a5326',18,-158)}
+  ${[['🍞',-70],['🥛',10],['🥚',90]].map(([m,y])=>`${T(m,50,C.ink,-58,y)}<polyline points="14,${y} 32,${y+16} 64,${y-16}" fill="none" stroke="#43a047" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>${T('来过',32,'#7a5326',102,y)}`).join('')}</g>`;
+}
+function warehouse(smoky){
+  return `<g><rect x="-180" y="-220" width="360" height="220" rx="10" fill="${smoky?'#ddd0b0':'#f6e2b3'}" stroke="#a1887f" stroke-width="6"/>
+  <polygon points="-210,-220 0,-320 210,-220" fill="#c0895a" stroke="#8d6440" stroke-width="6" stroke-linejoin="round"/>
+  <rect x="-60" y="-140" width="120" height="140" rx="8" fill="#a1887f"/><line x1="0" y1="-140" x2="0" y2="0" stroke="#8d6440" stroke-width="4"/>
+  ${[-135,95].map(x=>`<rect x="${x}" y="-180" width="60" height="50" rx="8" fill="${smoky?'#8d8d8d':'#d8ecfb'}"/>`).join('')}
+  ${T('脂肪',34,'#8d6440',0,-260)}
+  ${[-40,0,40].map(x=>`<g transform="translate(${x} -20)">${dropSVG(.7)}</g>`).join('')}</g>`;
+}
+function phone(){
+  const cols=['#ffd6d0','#d6ecff','#fff0c2','#dff3d8'], tt=['身体发炎？','28 天下内脏脂肪','抗炎生活','睡够还累？'], em=['🔥','⬇️','🥗','😴'];
+  const cards=[0,1,2,3,4,5,6,7].map(i=>{const k=i%4;return `<g transform="translate(0 ${-270+i*250})"><rect x="-150" y="0" width="300" height="230" rx="22" fill="#fff" stroke="#eee" stroke-width="3"/><rect x="-150" y="0" width="300" height="130" rx="22" fill="${cols[k]}"/>${T(em[k],78,C.ink,0,66)}${T(tt[k],30,C.ink,0,162)}<circle cx="-118" cy="204" r="12" fill="#ccc"/><rect x="-96" y="198" width="80" height="12" rx="6" fill="#ddd"/>${T('♥',28,'#ff6b6b',120,204)}</g>`}).join('');
+  return `<g><rect x="-190" y="-320" width="380" height="640" rx="52" fill="#37474f"/><rect x="-168" y="-298" width="336" height="596" rx="34" fill="#fff"/>
+  <defs><clipPath id="phclip"><rect x="-168" y="-250" width="336" height="548" rx="20"/></clipPath></defs>
+  <g clip-path="url(#phclip)"><g data-a="scroll">${cards}</g></g>
+  <rect x="-168" y="-298" width="336" height="48" rx="34" fill="#fff"/>${T('发现',26,'#888',0,-274)}<rect x="-40" y="-312" width="80" height="14" rx="7" fill="#37474f"/></g>`;
+}
+/* ===================== 场景动画（按 beat 编排） ===================== */
+const BUILD=[];
+const Fx=(b,e)=>(i,f)=>b[i]+f*(e[i]-b[i]);
+
+/* 红绿灯三问题板（第 1 幕 / 第 6 幕共用） */
+function board(cards,tCard,tLamp,outT,arrows){
+  const cx=[360,960,1560],cy=560;
+  cards.forEach((c,i)=>{
+    const x=cx[i];
+    add(`<g><rect x="-250" y="-250" width="500" height="500" rx="40" fill="#fff" stroke="#e3ddd0" stroke-width="7"/>
+      ${T(c.n,88,C.b,0,-170)}${c.ic.includes('FAT')?`${T(c.ic.replace('FAT',''),84,C.ink,-48,-60)}<g transform="translate(52 -88)">${fatCell(38,'hot')}</g>`:T(c.ic,84,C.ink,0,-60)}${T(c.q,c.qs||44,C.ink,0,30)}
+      <rect x="-124" y="80" width="248" height="84" rx="42" fill="#37474f"/>
+      ${[-76,0,76].map(dx=>`<circle cx="${dx}" cy="122" r="29" fill="#5b6a73"/>`).join('')}</g>`,
+      {x,y:cy,at:tCard[i],out:outT,kind:'pop',dur:.6});
+    const col=[C.r,C.y,C.g][c.lamp];
+    add(`<rect x="-250" y="-250" width="500" height="500" rx="40" fill="${col}" fill-opacity=".10" stroke="${col}" stroke-width="10"/>`,{x,y:cy,at:tLamp[i],out:outT,kind:'fade',dur:.4});
+    add(`<g><circle r="46" fill="${col}" opacity=".35"/><circle r="29" fill="${col}"/></g>`,
+      {x:x+[-76,0,76][c.lamp],y:cy+122,at:tLamp[i],out:outT,kind:'pop',tick:(lt)=>({ds:1+Math.sin(lt*5)*.06})});
+    add(T(c.res,48,col===C.y?'#b98300':col,0,0),{x,y:cy+205,at:tLamp[i]+.25,out:outT,kind:'up'});
+  });
+  if(arrows)[660,1260].forEach((x,i)=>add(arrow(-40,0,40,0,'#b9b2a3',10),{x,y:cy,at:arrows[0],out:arrows[1],kind:'fade'}));
+}
+
+BUILD[0]=(b,e)=>{
+  const F=Fx(b,e);
+  /* B0 手机刷屏 */
+  add(phone(),{x:960,y:555,s:.95,at:b[0]+.1,out:e[0]-.1,kind:'up',dur:.7,tick:(lt,el)=>{el.q[0].setAttribute('transform',`translate(0 ${-((lt*140)%1000)})`);}});
+  [['#身体发炎',420,410,-6],['#28天下内脏脂肪',1490,390,5],['#抗炎饮食',420,640,4],['#发炎体质',1500,650,-5]].forEach(([s,x,y,r],i)=>{
+    const w=s.length*36+70;
+    add(`<g><rect x="${-w/2}" y="-40" width="${w}" height="80" rx="40" fill="#fff" stroke="#ff8a80" stroke-width="5"/>${T(s,36,'#e0524a')}</g>`,{x,y,rot:r,at:b[0]+.7+i*.45,out:e[0]-.1,kind:'pop'});
+  });
+  const avc=['#f4a6a0','#90caf9','#ffcc80','#a5d6a7','#ce93d8','#80deea'];
+  for(let i=0;i<12;i++){const left=i<6,k=i%6;const x=left?250+k*82:1250+k*82+ (0);
+    add(`<g><circle r="32" fill="${avc[k]}" stroke="#fff" stroke-width="5"/><circle cx="-10" cy="-4" r="4" fill="#2b2b2b"/><circle cx="10" cy="-4" r="4" fill="#2b2b2b"/><path d="M-10 8 q10 9 20 0" fill="none" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/></g>`,
+      {x:left?x:x+200-80,y:800,at:b[0]+1.0+i*.13,out:e[0]-.1,kind:'pop'});}
+  [0,1,2,3].forEach(i=>add(T('❤️',50),{x:900+i*60,y:560,at:b[0]+1.5,out:e[0]-.1,kind:'none',tick:(lt)=>{const ph=((lt*.35+i*.27)%1);return{dy:-ph*260,op:Math.sin(Math.PI*ph),dx:Math.sin(ph*6+i)*20}}}));
+  /* B1 四个小图标 */
+  const ic=['😴','🔥','🟤','🩹'],cc=['#e3ecfb','#fde3d4','#ecdccc','#fbe3e8'];
+  ic.forEach((m,i)=>{const x=390+i*380;
+    add(`<g><circle r="120" fill="${cc[i]}" stroke="#fff" stroke-width="8"/>${T(m,130)}</g>`,{x,y:470,at:F(1,.04)+i*.9,out:e[1]-.05,kind:'pop'});
+    add(`<path d="M${x} 600 Q${x} 720 960 730" fill="none" stroke="#b9b2a3" stroke-width="6" stroke-dasharray="4 14" stroke-linecap="round"/>`,{at:F(1,.04)+i*.9+.4,out:e[1]-.05,kind:'fade'});});
+  add(flame(),{x:960,y:800,s:1.5,at:F(1,.5),out:e[1]-.05,kind:'pop',tick:flick});
+  /* B2 医生 */
+  add(doctor(),{x:430,y:815,s:1.35,at:b[2]+.2,out:e[2]-.05,kind:'left'});
+  add(report(),{x:850,y:560,s:.9,rot:-5,at:b[2]+.7,out:e[2]-.05,kind:'pop'});
+  ['🍞','🥛','🥚'].forEach((m,i)=>{
+    add(T(m,120),{x:1230+i*180,y:500,at:F(2,.32)+i*.15,out:e[2]-.05,kind:'pop'});
+    add(T('🚫',150),{x:1230+i*180,y:500,at:F(2,.5)+i*.3,out:e[2]-.05,kind:'pop'});});
+  add(`<g>${T('内脏脂肪 ⬇',42,C.ink,0,-62)}<rect x="-190" y="-22" width="380" height="44" rx="22" fill="#e6e0d4"/><rect data-a="bar" x="-190" y="-22" width="380" height="44" rx="22" fill="#f0b429"/>${T('📅 一个月内',40,'#777',0,68)}</g>`,
+    {x:1410,y:720,at:F(2,.62),out:e[2]-.05,kind:'up',tick:(lt,el,abs)=>{const p=eio(seg(abs,F(2,.72),(e[2]-b[2])*.22));el.q[0].setAttribute('width',(380-p*250).toFixed(1));}});
+  /* B3 多米诺 */
+  const dm=[{m:'🍞',c:'#f0b429',px:730},{m:'🔥',c:'#e57373',px:1060},{m:'FAT',c:'#5c85d6',px:1390}];
+  dm.forEach((d,i)=>{
+    const tip=F(3,.42)+i*.5;
+    add(`<g><rect x="-200" y="-300" width="200" height="300" rx="26" fill="#fff" stroke="${d.c}" stroke-width="9"/><line x1="-190" y1="-150" x2="-10" y2="-150" stroke="${d.c}" stroke-width="5" opacity=".5"/>${d.m==='FAT'?`<g transform="translate(-100 -222)">${fatCell(52,'hot')}</g>`:T(d.m,120,C.ink,-100,-225)}<circle cx="-100" cy="-100" r="9" fill="${d.c}"/></g>`,
+      {x:d.px,y:840,at:b[3]+.2+i*.3,out:e[3]-.05,kind:'drop',tick:(lt,el,abs)=>({rot:24*eio(seg(abs,tip,.55))+(abs>tip+.55?Math.sin((abs-tip)*10)*Math.exp(-(abs-tip-.55)*3)*2:0)})});
+  });
+  [830,1160,1490].forEach((x,i)=>{ if(i<3) add(T('？',130,C.b),{x:x-30,y:300,at:F(3,.4)+1.9+i*.25,out:e[3]-.05,kind:'pop',tick:(lt)=>({dy:Math.sin(lt*4+i)*10})});});
+};
+
+BUILD[1]=(b,e)=>{
+  const F=Fx(b,e);
+  const cards=[{n:'❓1',ic:'🍞🧪',q:'能验出来吗？',res:'目前不行',lamp:0},{n:'❓2',ic:'🍔🔥',q:'食物会点火吗？',res:'有线索',lamp:1},{n:'❓3',ic:'🔥FAT',q:'连到内脏脂肪？',res:'有关！',lamp:2}];
+  board(cards,[b[0]+.3,b[0]+.7,b[0]+1.1],[F(2,.22),F(3,.22),F(4,.22)],null,[b[0]+1.5,b[1]]);
+  /* B1 “先看结果” 指示：灯泡闪烁 */
+  add(T('👇',110),{x:960,y:250,at:b[1]+.2,out:b[2],kind:'pop',tick:(lt)=>({dy:Math.sin(lt*6)*14})});
+};
+
+BUILD[2]=(b,e)=>{
+  const F=Fx(b,e);
+  const cx=[300,740,1180,1620],col=['#e57373','#f0b429','#90a4ae','#f39c3d'],tint=['#fbe4e2','#fdf1d0','#e8edf0','#fde6d2'],ic=['🚨','😣','🤷','🔥'],nm=['过敏','不耐受','敏感','低度发炎'];
+  add(`<g><defs><linearGradient id="spg" x1="0" x2="1"><stop offset="0" stop-color="#e57373"/><stop offset=".5" stop-color="#f0b429"/><stop offset="1" stop-color="#b0bec5"/></linearGradient></defs><rect x="-860" y="-9" width="1720" height="18" rx="9" fill="url(#spg)"/>${T('一吃就有反应',30,'#8a8377',-730,-34)}${T('没感觉',30,'#8a8377',790,-34)}</g>`,{x:960,y:290,at:b[0]+.1,out:b[5],kind:'fade'});
+  cx.forEach((x,i)=>add(`<g><rect x="-200" y="-100" width="400" height="200" rx="34" fill="${tint[i]}" stroke="${col[i]}" stroke-width="8"/>${T(ic[i],92,C.ink,-100,0)}${T(nm[i],i===3?46:52,C.ink,68,0)}</g>`,
+    {x,y:415,at:b[0]+.4+i*.7,out:b[5],kind:'pop',tick:(lt,el,abs)=>{const on=abs>=b[i+1]&&abs<e[i+1];return{ds:on?1.07:1,op:abs<b[i+1]?.4:(on?1:.85)}}}));
+  /* B1 过敏：嘴唇肿 */
+  add(`<g>${human({mood:'swollen'})}</g>`,{x:840,y:745,s:.78,at:b[1]+.3,out:e[1],kind:'up'});
+  add(T('🦐',120),{x:1150,y:640,at:b[1]+.4,out:e[1],kind:'none',tick:(lt)=>({dx:-Math.min(1,lt/1)*160+0,op:1,dy:Math.sin(lt*3)*10})});
+  [[760,585],[930,590],[850,560],[900,640]].forEach(([x,y],i)=>add(`<circle r="9" fill="#e04b4b"/>`,{x,y,at:F(1,.55)+i*.2,out:e[1],kind:'pop'}));
+  add(T('⚡ 很快',44,'#e04b4b'),{x:1280,y:790,at:F(1,.5),out:e[1],kind:'pop'});
+  /* B2 不耐受：肚子胀 */
+  add(`<g>${human({mood:'bloat'})}<circle data-a="bl" cx="0" cy="40" r="60" fill="#ffd9a0" stroke="#e0a860" stroke-width="5" opacity=".9"/>${T('~ ~',44,'#8a8377',0,40)}</g>`,{x:840,y:745,s:.78,at:b[2]+.3,out:e[2],kind:'up',
+    tick:(lt,el)=>{el.q[0].setAttribute('r',(60+Math.sin(lt*2.4)*8+Math.min(lt,3)*8).toFixed(1));}});
+  add(T('🥛',130),{x:1150,y:640,at:b[2]+.4,out:e[2],kind:'pop',tick:(lt)=>({dy:Math.sin(lt*3)*10})});
+  add(`<g><rect x="-64" y="-28" width="128" height="56" rx="28" fill="#fff" stroke="#f0b429" stroke-width="5"/>${T('乳糖',36)}</g>`,{x:1150,y:770,at:F(2,.4),out:e[2],kind:'pop'});
+  /* B3 敏感：一团雾 */
+  const rr=rng(7);
+  for(let i=0;i<8;i++){const x=780+rr()*380,y=600+rr()*170,r=70+rr()*60;
+    add(`<circle r="${r}" fill="#b0bec5" opacity=".55"/>`,{x,y,at:b[3]+.2+i*.15,out:e[3],kind:'pop',tick:(lt)=>({dx:Math.sin(lt*1.3+i)*26,dy:Math.cos(lt*1.1+i*2)*14})});}
+  ['？','？','？'].forEach((q,i)=>add(T(q,110,'#607d8b'),{x:820+i*140,y:690+(i%2)*20,at:b[3]+1.2+i*.4,out:e[3],kind:'pop',tick:(lt)=>({dy:Math.sin(lt*3+i)*12})}));
+  /* B4 低度发炎：没表情 + 小火 */
+  add(human({mood:'neutral'}),{x:900,y:745,s:.78,at:b[4]+.3,out:e[4],kind:'up'});
+  add(flame(),{x:900,y:775,s:.7,at:F(4,.35),out:e[4],kind:'pop',tick:flick});
+  add(T('😐',110),{x:1230,y:610,at:F(4,.3),out:e[4],kind:'pop'});
+  add(T('（没感觉）',44,'#8a8377'),{x:1230,y:720,at:F(4,.4),out:e[4],kind:'fade'});
+  /* B5 报告 → 登记簿 */
+  const fl=F(5,.30);
+  add(report(),{x:760,y:610,s:1.0,at:b[5]+.2,out:e[5],kind:'pop',tick:(lt,el,abs)=>{const p=seg(abs,fl,.9);return{sx:p<.5?Math.cos(Math.PI*p):0.0001,op:p<.5?1:0}}});
+  add(ledger(),{x:760,y:610,s:1.0,at:b[5]+.2,out:e[5],kind:'none',tick:(lt,el,abs)=>{const p=seg(abs,fl,.9);return{sx:p<.5?0.0001:Math.abs(Math.cos(Math.PI*p)),op:p<.5?0:1}}});
+  add(`<g>${T('IgG 高低',38,'#8a8377',0,-238)}<line x1="-150" y1="190" x2="240" y2="190" stroke="#8a8377" stroke-width="6" stroke-linecap="round"/></g>`,{x:1350,y:640,at:F(5,.62),out:e[5],kind:'fade'});
+  [['🍞',310],['🥛',290],['🥚',270],['🦞',70]].forEach(([m,h],i)=>{
+    add(`<g><rect data-a="bar" x="-40" y="${-h}" width="80" height="${h}" rx="14" fill="${i<3?'#e57373':'#b0bec5'}"/>${T(m,54,C.ink,0,42)}</g>`,{x:1150+i*130,y:740,at:F(5,.62)+i*.15,out:e[5],kind:'up',dur:.7});});
+  add(T('最常吃 → 最高',40,'#c0524f'),{x:1290,y:410,at:F(5,.75),out:e[5],kind:'pop'});
+  /* B6 45 人 */
+  const gx=280,gy=360;
+  for(let i=0;i<45;i++){const c=i%9,r=Math.floor(i/9);const skin=['#ffd9b3','#f1c27d','#e0ac69','#ffe0bd'][i%4];
+    add(`<g><rect x="-20" y="4" width="40" height="42" rx="16" fill="${['#7cb3e8','#a5d6a7','#ffcc80','#ce93d8','#f48fb1'][(i*3)%5]}"/><circle cy="-14" r="24" fill="${skin}" stroke="#d9b28a" stroke-width="3"/><circle cx="-8" cy="-17" r="3.4" fill="#2b2b2b"/><circle cx="8" cy="-17" r="3.4" fill="#2b2b2b"/><line x1="-8" y1="-3" x2="8" y2="-3" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/></g>`,
+      {x:gx+c*105,y:gy+r*100+30,s:1.15,at:b[6]+.2+i*.05,out:e[6],kind:'pop',dur:.35});}
+  add(`<g>${T('45 人',96,C.ink,0,-90)}${arrow(0,-20,0,40,'#8a8377',10)}${T('0 人',120,C.g,0,140)}${T('有反应',52,C.g,0,230)}</g>`,{x:1640,y:490,at:F(6,.55),out:e[6],kind:'pop'});
+  /* B7 标题卡：吃过 ≠ 有害 */
+  add(ledger(),{x:620,y:620,s:.85,at:b[7]+.3,out:e[7],kind:'left'});
+  add(T('≠',200,C.r),{x:960,y:610,at:b[7]+1.0,out:e[7],kind:'pop'});
+  add(`<g><circle r="130" fill="#fbe4e2" stroke="${C.r}" stroke-width="8"/>${T('⚠️',130)}</g>`,{x:1300,y:610,at:b[7]+1.4,out:e[7],kind:'right'});
+  add(T('吃过',54,'#7a5326'),{x:620,y:848,at:b[7]+1.2,out:e[7],kind:'fade'});
+  add(T('有害',54,C.r),{x:1300,y:848,at:b[7]+1.6,out:e[7],kind:'fade'});
+};
+BUILD[3]=(b,e)=>{
+  const F=Fx(b,e);
+  /* B0 两条路 */
+  const road=(d,at)=>add(`<path d="${d}" pathLength="1" fill="none" stroke="#cfc8bb" stroke-width="80" stroke-linecap="round" stroke-linejoin="round" data-a="r" stroke-dasharray="1" stroke-dashoffset="1"/>
+     <path d="${d}" pathLength="1" fill="none" stroke="#fff" stroke-width="6" stroke-dasharray="0.02 0.03" data-a="r2" opacity=".0"/>`,
+     {at,out:e[0]-.02,kind:'none',tick:(lt,el)=>{const p=eo(lt/1.2);el.q[0].setAttribute('stroke-dashoffset',(1-p).toFixed(3));}});
+  road('M960 800 L960 620 Q960 520 800 470 L560 400',b[0]+.2);
+  road('M960 800 L960 620 Q960 520 1120 470 L1360 400',b[0]+.5);
+  add(`<g><circle r="110" fill="#fde3d4" stroke="${C.r}" stroke-width="8"/>${T('🍔',110)}</g>`,{x:500,y:370,at:b[0]+1.3,out:e[0]-.02,kind:'pop'});
+  add(`<g><circle r="110" fill="#e3ecfb" stroke="${C.b}" stroke-width="8"/>${T('🍳',90,C.ink,-32,-8)}${T('🛡️',90,C.ink,34,24)}</g>`,{x:1420,y:370,at:b[0]+1.7,out:e[0]-.02,kind:'pop'});
+  add(T('路 1',52,C.r),{x:500,y:520,at:b[0]+1.8,out:e[0]-.02,kind:'fade'});
+  add(T('路 2',52,C.b),{x:1420,y:520,at:b[0]+2.1,out:e[0]-.02,kind:'fade'});
+  add(T('？',90,'#8a8377'),{x:960,y:720,at:b[0]+1.6,out:e[0]-.02,kind:'pop',tick:(lt)=>({dy:Math.sin(lt*4)*8})});
+  /* B1 一餐高脂餐 → 4 小时 → 细菌碎片 +50% */
+  add(T('🍔🍟',120),{x:330,y:590,at:b[1]+.2,out:e[1],kind:'left'});
+  add(arrow(-50,0,50,0,'#b9b2a3',10),{x:520,y:590,at:b[1]+.7,out:e[1],kind:'fade'});
+  add(`<g><circle r="115" fill="#fff" stroke="#8a8377" stroke-width="10"/>${[0,1,2,3,4,5,6,7,8,9,10,11].map(i=>`<line x1="0" y1="-98" x2="0" y2="-84" stroke="#8a8377" stroke-width="5" transform="rotate(${i*30})"/>`).join('')}
+    <line data-a="h" x1="0" y1="0" x2="0" y2="-80" stroke="${C.r}" stroke-width="10" stroke-linecap="round"/><circle r="10" fill="${C.ink}"/>${T('4 小时',56,C.ink,0,190)}</g>`,
+    {x:760,y:540,at:b[1]+.9,out:e[1],kind:'pop',tick:(lt,el,abs)=>{el.q[0].setAttribute('transform',`rotate(${(eio(seg(abs,F(1,.25),(e[1]-b[1])*.45))*360).toFixed(1)})`);}});
+  add(arrow(-50,0,50,0,'#b9b2a3',10),{x:990,y:590,at:F(1,.55),out:e[1],kind:'fade'});
+  add(`<g><line x1="-160" y1="200" x2="240" y2="200" stroke="#8a8377" stroke-width="6" stroke-linecap="round"/>
+    <rect x="-130" y="20" width="100" height="180" rx="14" fill="#90caf9"/>
+    <rect data-a="bar" x="40" y="20" width="100" height="180" rx="14" fill="${C.r}"/>
+    ${T('餐前',40,C.ink,-80,240)}${T('餐后 4 小时',34,C.ink,90,240)}${T('细菌碎片',40,'#7b5ea7',50,-240)}</g>`,
+    {x:1400,y:520,at:F(1,.55),out:e[1],kind:'up',tick:(lt,el,abs)=>{const p=eo(seg(abs,F(1,.62),(e[1]-b[1])*.3));const h=180*(1+.5*p);const r=el.q[0];r.setAttribute('height',h.toFixed(1));r.setAttribute('y',(200-h).toFixed(1));}});
+  add(T('+ 约五成',66,C.r),{x:1640,y:470,at:F(1,.85),out:e[1],kind:'pop'});
+  /* B2 细菌碎片跟着脂肪进血管 */
+  add(`<g><rect x="-100" y="-40" width="620" height="290" rx="60" fill="#ffd6d0" stroke="#f4a6a0" stroke-width="6"/>${T('肠道',46,'#c0524f',0,150)}</g>`,{x:150,y:610,at:b[2]+.1,out:e[2],kind:'left'});
+  add(`<g><rect x="-20" y="-70" width="1240" height="140" rx="70" fill="#ef9a9a" stroke="#e57373" stroke-width="6"/><rect x="0" y="-52" width="1200" height="104" rx="52" fill="#ffcdd2"/>${T('血管',40,'#c0524f',300,-100)}</g>`,{x:640,y:520,at:b[2]+.3,out:e[2],kind:'right'});
+  for(let j=0;j<6;j++){
+    add(`<g>${dropSVG(1.3)}<g transform="translate(20 -18)"><path d="M0 -14 l6 8 l12 -2 l-6 10 l8 10 l-13 -2 l-6 10 l-4 -11 l-12 -4 l10 -7 l-3 -12z" fill="#9b6bd6" stroke="#7b4fb0" stroke-width="2"/></g></g>`,
+      {at:b[2]+.6,out:e[2],kind:'none',tick:(lt)=>{const t=((lt*.11+j/6)%1);const x=200+t*1350;const y=t<.22?lerp(720,520,eio(t/.22)):520;return{dx:x,dy:y,op:Math.min(1,t*8)*Math.min(1,(1-t)*8)}}});}
+  add(flame(),{x:1640,y:430,s:.4,at:b[2]+.8,out:e[2],kind:'none',tick:(lt,el,abs)=>{const g=.4+.75*eio(seg(abs,b[2]+1,(e[2]-b[2])*.7));return{ds:g/0.4*(1+Math.sin(lt*9)*.06),rot:Math.sin(lt*7)*4}}});
+  add(T('🔥 餐后发炎',52,C.r),{x:1560,y:290,at:F(2,.55),out:e[2],kind:'pop'});
+  /* B3 免疫警卫拦下蛋白质小人 */
+  add(person(),{x:500,y:800,s:2.3,at:b[3]+.3,out:e[3],kind:'none',tick:(lt)=>{const w=Math.min(1,lt/2.2);const bounce=lt>2.4?Math.min(1,(lt-2.4)/.8):0;return{dx:w*280-bounce*220,dy:-Math.abs(Math.sin(lt*7))*14*(1-bounce),op:1}}});
+  add(guard('atk'),{x:1240,y:800,s:1.7,at:b[3]+.5,out:e[3],kind:'right'});
+  add(T('✋',150),{x:1000,y:610,at:b[3]+2.0,out:e[3],kind:'pop'});
+  add(T('？',150,C.b),{x:1240,y:330,at:b[3]+2.4,out:e[3],kind:'pop',tick:(lt)=>({dy:Math.sin(lt*4)*10})});
+  add(T('食物蛋白',44,C.purple),{x:500,y:840,at:b[3]+.5,out:e[3],kind:'fade',tick:(lt)=>{const w=Math.min(1,lt/2.2);const bounce=lt>1.9?Math.min(1,(lt-1.9)/.8):0;return{dx:w*280-bounce*220}}});
+  /* B4 肠道围墙松动 + 登记簿 */
+  const bricks=[];
+  for(let r=0;r<2;r++)for(let c=0;c<7;c++){
+    const loose=(r===0&&(c===2||c===4))||(r===1&&c===3);
+    bricks.push(add(`<rect x="-64" y="-30" width="128" height="60" rx="10" fill="${loose?'#ef9a6a':'#e8a06a'}" stroke="#b9713f" stroke-width="5"/>`,
+      {x:830+c*135+(r?-66:0)+ (r? 66:0)*0,y:500+r*66,at:b[4]+.2+(r*7+c)*.05,out:e[4],kind:'drop',
+       tick:loose?(lt)=>({dy:-Math.abs(Math.sin(lt*3+c))*10-6,rot:Math.sin(lt*4+c)*7}):null}));}
+  [[1010,470],[1150,475],[1180,560]].forEach(([x,y],i)=>add(`<circle r="11" fill="${C.purple}"/>`,{at:b[4]+1.5,out:e[4],kind:'none',tick:(lt)=>{const ph=((lt*.5+i/3)%1);return{dx:x+Math.sin(ph*5)*10,dy:y-60+ph*160,op:Math.sin(Math.PI*ph)}}}));
+  add(T('肠道内',40,'#8a8377'),{x:1330,y:400,at:b[4]+.8,out:e[4],kind:'fade'});
+  add(T('血液',40,'#8a8377'),{x:1330,y:635,at:b[4]+.8,out:e[4],kind:'fade'});
+  add(ledger(),{x:330,y:600,s:.8,at:b[4]+.4,out:e[4],kind:'left'});
+  add(T('IgG ↑',60,C.r),{x:330,y:790,at:b[4]+1.0,out:e[4],kind:'pop'});
+  add(T('肠漏 ↑',60,C.r),{x:1330,y:725,at:b[4]+1.2,out:e[4],kind:'pop'});
+  add(`<path d="M400 380 Q740 250 1080 400" fill="none" stroke="#b9b2a3" stroke-width="8" stroke-dasharray="4 16" stroke-linecap="round"/>${T('？',120,C.b,740,310)}`,{at:b[4]+1.6,out:e[4],kind:'fade'});
+  add(`<g><rect x="-330" y="-46" width="660" height="92" rx="46" fill="#fff3c8" stroke="${C.y}" stroke-width="7"/>${T('谁先谁后，还不知道',56)}</g>`,{x:1180,y:815,at:F(4,.5),out:e[4],kind:'pop'});
+  /* B5 卡：吃法 vs 某个食物 */
+  add(`<g><circle r="150" fill="#fde3d4" stroke="${C.r}" stroke-width="8"/>${T('🍔🍟',100,C.ink,0,-10)}${T('吃法',52,C.ink,0,90)}</g>`,{x:620,y:560,at:b[5]+.3,out:e[5],kind:'pop'});
+  add(flame(),{x:760,y:480,s:1.1,at:b[5]+1.2,out:e[5],kind:'pop',tick:flick});
+  add(`<g><circle r="150" fill="#eceff1" stroke="#90a4ae" stroke-width="8" stroke-dasharray="14 12"/>${T('🥚',100,C.ink,0,-10)}${T('某个食物',48,C.ink,0,90)}</g>`,{x:1300,y:560,at:b[5]+.8,out:e[5],kind:'pop'});
+  add(T('？',130,'#90a4ae'),{x:1440,y:440,at:b[5]+1.6,out:e[5],kind:'pop',tick:(lt)=>({dy:Math.sin(lt*4)*10})});
+  add(T('>',150,C.y),{x:960,y:560,at:b[5]+1.5,out:e[5],kind:'pop'});
+};
+
+BUILD[4]=(b,e)=>{
+  const F=Fx(b,e);
+  const BUSX=560,BUSY=775,BS=.85;
+  /* --- B0-B2 场景：肠道、内脏脂肪、皮下脂肪、马路 --- */
+  const outA=b[3];
+  add(`<rect x="0" y="775" width="1920" height="70" fill="#d9d3c6"/><g stroke="#fff" stroke-width="6" stroke-dasharray="40 40">${''}<line x1="0" y1="810" x2="1920" y2="810"/></g>`,{at:0,out:outA,kind:'fade'});
+  add(`<g><rect x="-160" y="-190" width="330" height="360" rx="90" fill="#ffd6d0" stroke="#f4a6a0" stroke-width="6"/>${T('肠道',48,'#c0524f',0,120)}${[[-70,-100],[10,-130],[80,-60],[-30,-30],[50,20],[-80,-20]].map(([x,y])=>`<g transform="translate(${x} ${y})">${dropSVG(.9)}</g>`).join('')}</g>`,{x:200,y:585,at:b[0]+.1,out:outA,kind:'left'});
+  const vis=[[0,0,110],[-110,20,80],[100,30,85],[-40,-60,80],[50,-70,75],[-150,-25,55],[150,-10,60]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="#f8d14f" stroke="#d99a1e" stroke-width="6"/>`).join('');
+  add(`<g data-a="vf">${vis}</g>${T('内脏脂肪',54,C.ink,0,-2)}`,{x:930,y:470,at:b[0]+.4,out:outA,kind:'pop',
+    tick:(lt,el,abs)=>{const p=seg(abs,F(1,.55),.5);return{ds:1+Math.sin(p*Math.PI)*.08*((abs<e[1])?1:0)}}});
+  add(`<g opacity=".95">${[[0,0,90],[-100,20,65],[100,20,68],[40,-50,60]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="#efe3c8" stroke="#cdbb95" stroke-width="6"/>`).join('')}</g>${T('皮下脂肪',46,'#8d7a55',0,0)}`,{x:1600,y:480,at:b[0]+.7,out:outA,kind:'pop'});
+  add(T('💤',80),{x:1600,y:370,at:F(1,.6),out:outA,kind:'pop',tick:(lt)=>({dy:Math.sin(lt*2)*8})});
+  /* 巴士 */
+  const jumpers=[0,1,2];
+  add(bus(),{x:BUSX,y:BUSY,s:BS,at:b[0]+.3,out:outA,kind:'right',tick:(lt,el,abs)=>{
+    const dx=eio(seg(abs,F(0,.78),(e[0]-b[0])*.2))*0+eio(seg(abs,F(1,.02),(e[1]-b[1])*.35))*340;
+    const boarded=[F(0,.55),F(0,.65),F(0,.75)];
+    el.q.forEach(n=>{});
+    const Ps=el.q.filter(n=>n.dataset.a==='P'),Ds=el.q.filter(n=>n.dataset.a==='D');
+    Ps.forEach((n,i)=>{const on=abs>=boarded[i]+.7&&abs<F(1,.55)+i*.12;n.setAttribute('opacity',on?1:0)});
+    Ds.forEach((n,i)=>{n.setAttribute('opacity',abs>=F(0,.15)+i*.14+.6?1:0)});
+    return{dx};}});
+  /* 脂肪滴飞上车顶 */
+  [0,1,2,3].forEach(i=>{const t0=F(0,.15)+i*.14;const tx=[-100,-40,20,80][i];
+    add(dropSVG(1.1),{x:200,y:560,at:t0,out:t0+.7,kind:'none',tick:(lt)=>{const p=eio(lt/.6);return{dx:p*(BUSX+tx*BS-200),dy:p*(BUSY-168*BS-560)-Math.sin(p*Math.PI)*120}}});});
+  /* 蛋白质小人跳上车 */
+  [0,1,2].forEach(i=>{const t0=F(0,.55)+i*.1*(e[0]-b[0])/1;const wx=[-106,-36,34][i];
+    add(person(),{x:390,y:BUSY+30,s:1.0,at:t0,out:t0+.8,kind:'none',tick:(lt)=>{const p=clamp(lt/.7);return{dx:p*(BUSX+wx*BS-390),dy:-(p*115)-Math.sin(p*Math.PI)*110,op:1}}});});
+  /* B1：进站，乘客跳进内脏脂肪 */
+  [0,1,2].forEach(i=>{const t0=F(1,.55)+i*.12;const wx=[-106,-36,34][i];
+    add(person(),{x:BUSX+340+wx*BS,y:BUSY-95,s:.9,at:t0,out:t0+.8,kind:'none',tick:(lt)=>{const p=clamp(lt/.7);return{dx:(930-(BUSX+340+wx*BS))*p+(i-1)*20*p,dy:-p*(BUSY-95-540)-Math.sin(p*Math.PI)*90}}});});
+  add(`<g>${T('!',90,C.r)}</g>`,{x:930,y:290,at:F(1,.75),out:outA,kind:'pop',tick:(lt)=>({rot:Math.sin(lt*10)*8})});
+  add(`<g><rect x="-6" y="-190" width="12" height="190" fill="#8d7a55"/><circle cy="-210" r="44" fill="#e57373" stroke="#b83a3a" stroke-width="6"/>${T('站',46,'#fff',0,-208)}</g>`,{x:1290,y:790,at:F(1,.1),out:outA,kind:'pop'});
+  /* B2：警卫看证件 */
+  add(guard('atk'),{x:1580,y:830,s:1.35,at:b[2]+.2,out:outA,kind:'none',tick:(lt)=>({dx:-eio(lt/1.4)*300})});
+  add(`<g transform="rotate(-10)"><rect x="-70" y="-46" width="140" height="92" rx="12" fill="#fff" stroke="#8a8377" stroke-width="5"/><circle cx="-32" cy="-8" r="18" fill="#c9a0ff"/><rect x="0" y="-20" width="56" height="10" rx="5" fill="#ddd"/><rect x="0" y="0" width="40" height="10" rx="5" fill="#ddd"/></g>`,{x:1150,y:600,at:b[2]+.6,out:outA,kind:'pop'});
+  add(T('🔍',120),{x:1150,y:600,at:b[2]+1.6,out:outA,kind:'pop',tick:(lt)=>({dx:Math.sin(lt*2.2)*40,dy:Math.cos(lt*2.2)*14,rot:-8})});
+  add(T('？',130,C.b),{x:1330,y:430,at:b[2]+2.0,out:outA,kind:'pop',tick:(lt)=>({dy:Math.sin(lt*4)*10})});
+
+  /* --- B3-B6 分屏 --- */
+  const outB=b[7];
+  add(`<rect x="24" y="255" width="924" height="590" rx="40" fill="#43a047" fill-opacity=".09"/><rect x="972" y="255" width="924" height="590" rx="40" fill="#e57373" fill-opacity=".10"/>`,{at:b[3],out:outB,kind:'fade'});
+  add(`<g><rect x="-140" y="-34" width="280" height="68" rx="34" fill="#43a047"/>${T('✅ 耐受',44,'#fff')}</g>`,{x:486,y:290,at:b[3]+.2,out:outB,kind:'pop'});
+  add(`<g><rect x="-140" y="-34" width="280" height="68" rx="34" fill="#e57373"/>${T('❌ 致敏',44,'#fff')}</g>`,{x:1434,y:290,at:b[3]+.4,out:outB,kind:'pop'});
+  const cellOutL=b[6],cellOutR=b[6];
+  /* 左：放行 */
+  add(fatCell(105,'happy'),{x:720,y:560,at:b[3]+.3,out:cellOutL,kind:'pop',tick:(lt)=>({dy:Math.sin(lt*3)*6})});
+  add(guard('rep'),{x:330,y:815,s:1.3,at:b[3]+.4,out:cellOutL,kind:'left'});
+  add(person(),{x:110,y:815,s:1.5,at:b[3]+.8,out:cellOutL,kind:'none',tick:(lt,el,abs)=>{const p=seg(abs,F(3,.32),(e[3]-b[3])*.45);const hop=seg(abs,F(3,.8),.6);return{dx:p*430+hop*120,dy:-Math.abs(Math.sin(lt*6))*8*(1-hop)-hop*180+hop*40*hop,op:1-hop*hop}}});
+  add(`<g>${check(46,C.g,18)}</g>`,{x:330,y:520,at:F(3,.45),out:cellOutL,kind:'pop'});
+  add(T('👍',80),{x:470,y:740,at:F(3,.5),out:cellOutL,kind:'pop'});
+  add(T('💛',60),{x:800,y:440,at:F(3,.85),out:cellOutL,kind:'pop',tick:(lt)=>({dy:-lt*20})});
+  /* 右：致敏 */
+  add(fatCell(105,'happy'),{x:1240,y:560,at:b[3]+.3,out:F(5,.02),kind:'pop'});
+  add(fatCell(105,'hot'),{x:1240,y:560,at:F(5,.02),out:cellOutR,kind:'fade',dur:.3});
+  add(smokeHtml(),{x:1240,y:455,s:1,at:F(5,.05),out:cellOutR,kind:'fade',tick:(lt,el)=>smokeTick(lt,el)});
+  add(person(),{x:1030,y:815,s:1.5,at:b[3]+.9,out:cellOutR,kind:'none',tick:(lt,el,abs)=>({dx:Math.min(1,lt/1.5)*90})});
+  /* B4：吹哨，警卫涌入 */
+  add(`<g>${T('📢',90)}${['','',''].map((_,i)=>`<path d="M${60+i*22} ${-30-i*4} q${20} ${30+i*4} 0 ${60+i*8}" fill="none" stroke="${C.r}" stroke-width="7" stroke-linecap="round"/>`).join('')}</g>`,{x:1540,y:520,at:b[4]+.2,out:F(5,.1),kind:'pop',tick:(lt)=>({rot:Math.sin(lt*14)*6})});
+  add(T('！',110,C.r),{x:1620,y:440,at:b[4]+.5,out:F(5,.1),kind:'pop'});
+  const gpos=[[1080,790,'atk'],[1210,850,'rep'],[1340,790,'atk'],[1470,850,'rep'],[1600,790,'atk'],[1730,850,'rep'],[1400,700,'rep'],[1560,690,'rep']];
+  gpos.forEach(([x,y,ty],i)=>{
+    const isAtk=ty==='atk';
+    add(guard(ty),{x,y,s:.95,at:b[4]+.8+i*.22,out:isAtk?cellOutR:F(5,.5+i*.05),outKind:'shrink',kind:'right'});
+  });
+  [[1145,730],[1275,785],[1405,845],[1535,760],[1665,850]].forEach(([x,y],i)=>add(guard('atk'),{x,y,s:.95,at:F(5,.2)+i*.2,out:cellOutR,kind:'pop'}));
+  add(`<g><rect x="-190" y="-40" width="380" height="80" rx="40" fill="#fff" stroke="${C.r}" stroke-width="6"/>${T('⚔️ ↑    🔧 ↓',48)}</g>`,{x:1434,y:392,at:F(5,.3),out:cellOutR,kind:'pop'});
+  /* B6：钥匙 */
+  const keyLock=(x,ok)=>{
+    add(lockHtml(),{x:x+80,y:590,s:1.05,at:b[6]+.2,out:outB,kind:'pop',tick:(lt,el,abs)=>{const p=ok?eio(seg(abs,F(6,.42),.7)):0;el.q[0].setAttribute('transform',`rotate(${-p*28} -44 -50) translate(0 ${-p*30})`);}});
+    add(keyHtml(),{x:x-180,y:604,s:1.05,at:b[6]+.5,out:outB,kind:'left',tick:(lt,el,abs)=>{
+      if(ok){const p=eio(seg(abs,F(6,.35),.7));return{sx:Math.cos(Math.PI*p),dx:0};}
+      const jig=(lt%1.7)<.9;return{rot:jig?Math.sin(lt*38)*5:0,dx:jig?Math.sin(lt*40)*4:0};}});
+  };
+  keyLock(460,true);keyLock(1400,false);
+  add(`<g>${check(56,C.g,20)}</g>`,{x:520,y:440,at:F(6,.55),out:outB,kind:'pop'});
+  add(`<g>${xmark(46,C.r,20)}</g>`,{x:1460,y:440,at:F(6,.55),out:outB,kind:'pop'});
+  for(let i=0;i<9;i++)add(`<rect x="-20" y="-20" width="40" height="40" rx="9" fill="#cfe8fb" stroke="#7bb4e0" stroke-width="4"/>`,{x:1600+((i%3)*44)-40+((i>5)?20:0),y:790-Math.floor(i/3)*44,rot:(i*13)%20-10,at:F(6,.5)+i*.28,out:outB,kind:'drop',dur:.4});
+  add(T('血糖 ↑',48,'#3b82c4'),{x:1750,y:660,at:F(6,.8),out:outB,kind:'pop'});
+  add(T('胰岛素钥匙',40,'#8a8377'),{x:460,y:800,at:F(6,.3),out:outB,kind:'fade'});
+  add(T('变不灵',40,C.r),{x:1400,y:800,at:F(6,.4),out:outB,kind:'fade'});
+
+  /* --- B7：老鼠站上秤 --- */
+  const outC=b[8];
+  const scaleG=(mood)=>`<g><rect x="-190" y="-30" width="380" height="40" rx="20" fill="#b0bec5" stroke="#78909c" stroke-width="5"/><rect x="-160" y="10" width="320" height="130" rx="30" fill="#eceff1" stroke="#78909c" stroke-width="6"/>
+    <circle cx="0" cy="75" r="50" fill="#fff" stroke="#78909c" stroke-width="5"/><line data-a="nd" x1="0" y1="75" x2="0" y2="38" stroke="${C.r}" stroke-width="6" stroke-linecap="round"/><circle cx="0" cy="75" r="6" fill="#37474f"/></g>`;
+  [[620,'✅'],[1300,'✅']].forEach(([x,mk],i)=>{
+    add(scaleG(),{x,y:660,s:1.0,at:b[7]+.3+i*.3,out:outC,kind:'up',tick:(lt,el,abs)=>{el.q[0].setAttribute('transform',`rotate(${(eo(seg(abs,b[7]+1.4,.8))*62-Math.exp(-(abs-b[7]-2.2>0?abs-b[7]-2.2:0)*3)*0).toFixed(1)} 0 75)`);}});
+    add(mouse(),{x:x-10,y:590,s:1.35,at:b[7]+.7+i*.3,out:outC,kind:'drop',dur:.6});
+  });
+  add(T('=',220,C.b),{x:960,y:640,at:b[7]+1.8,out:outC,kind:'pop'});
+  add(`<g><rect x="-100" y="-30" width="200" height="60" rx="30" fill="#43a047"/>${T('正常饮食',34,'#fff')}</g>`,{x:620,y:850-15,at:b[7]+1.5,out:outC,kind:'pop'});
+  add(`<g><rect x="-100" y="-30" width="200" height="60" rx="30" fill="#e57373"/>${T('致敏的老鼠',34,'#fff')}</g>`,{x:1300,y:850-15,at:b[7]+1.7,out:outC,kind:'pop'});
+  /* --- B8：同样大小的仓库，右边冒烟 --- */
+  const outD=b[9];
+  add(warehouse(false),{x:600,y:760,s:1.05,at:b[8]+.2,out:outD,kind:'up'});
+  add(warehouse(true),{x:1320,y:760,s:1.05,at:b[8]+.5,out:outD,kind:'up'});
+  add(`<g>${arrow(-170,0,170,0,'#8a8377',6)}${arrow(170,0,-170,0,'#8a8377',6)}</g>`,{x:600,y:390,s:1.1,at:b[8]+1.0,out:outD,kind:'fade'});
+  add(`<g>${arrow(-170,0,170,0,'#8a8377',6)}${arrow(170,0,-170,0,'#8a8377',6)}</g>`,{x:1320,y:390,s:1.1,at:b[8]+1.0,out:outD,kind:'fade'});
+  add(`<g><rect x="-100" y="-30" width="200" height="60" rx="30" fill="#fff" stroke="#8a8377" stroke-width="5"/>${T('一样大',38)}</g>`,{x:960,y:390,at:b[8]+1.3,out:outD,kind:'pop'});
+  add(smokeHtml(),{x:1330,y:440,s:1.15,at:b[8]+1.6,out:outD,kind:'fade',tick:(lt,el)=>smokeTick(lt,el,.35,150)});
+  add(T('⚠️',80),{x:1520,y:520,at:b[8]+2.4,out:outD,kind:'pop',tick:(lt)=>({rot:Math.sin(lt*8)*8})});
+  /* --- B9：细胞实验 --- */
+  const outE=b[10];
+  add(`<g><ellipse rx="420" ry="250" fill="#e3f2fd" stroke="#90caf9" stroke-width="10"/><ellipse rx="380" ry="215" fill="#f4faff"/><path d="M-250 100 q100 40 200 0" fill="none" stroke="#90caf9" stroke-width="5" opacity=".5"/></g>`,{x:960,y:610,at:b[9]+.2,out:outE,kind:'zoom'});
+  add(T('🧫',90),{x:610,y:400,at:b[9]+.6,out:outE,kind:'pop'});
+  add(`<g><g data-a="brl"><rect x="-70" y="-90" width="140" height="180" rx="30" fill="#d18b47" stroke="#8d5a2b" stroke-width="6"/>${[-40,40].map(y=>`<rect x="-72" y="${y-10}" width="144" height="18" rx="6" fill="#8d5a2b"/>`).join('')}${T('油',52,'#fff',0,0)}</g></g>`,{x:1110,y:620,at:b[9]+.9,out:outE,kind:'pop',tick:(lt,el)=>({ds:1+Math.min(lt,5)*.07})});
+  add(fatCell(95,'happy'),{x:820,y:610,at:b[9]+.7,out:outE,kind:'pop'});
+  add(`<g><path d="M60 -20 q70 -20 120 30" fill="none" stroke="#e0a82e" stroke-width="30" stroke-linecap="round"/></g>`,{x:820,y:625,at:b[9]+1.0,out:outE,kind:'fade'});
+  [0,1,2].forEach(i=>add(`<polygon points="0,-60 -22,6 -2,6 -14,60 30,-14 8,-14 24,-60" fill="${C.r}" stroke="#b83a3a" stroke-width="3"/>`,{at:b[9]+1.4,out:outE,kind:'none',tick:(lt)=>{const ph=((lt*.7+i/3)%1);return{dx:760+i*180,dy:300+ph*250,op:Math.sin(Math.PI*Math.min(1,ph*1.15))}}}));
+  add(T('发炎信号',44,C.r),{x:1330,y:400,at:F(9,.35),out:outE,kind:'pop'});
+  add(`<g>${flame()}${xmark(40,'#607d8b',12)}</g>`,{x:1560,y:760,s:.9,at:F(9,.6),out:outE,kind:'pop'});
+  add(T('不肯燃烧',40,'#607d8b'),{x:1560,y:830,at:F(9,.65),out:outE,kind:'fade'});
+  /* --- B10：人体 --- */
+  const outF=b[11];
+  const belly=(r)=>`<circle cy="40" r="${r}" fill="#f8d14f" stroke="#d99a1e" stroke-width="5"/>`;
+  add(human({shirt:'#90caf9'})+belly(34),{x:430,y:600,s:.85,at:b[10]+.2,out:outF,kind:'up'});
+  add(human({shirt:'#90caf9'})+belly(74),{x:960,y:600,s:.85,at:b[10]+.5,out:outF,kind:'up'});
+  [[0,40,.4],[0,30,.5],[0,50,.6]].forEach(([dx,dy,s],i)=>{ if(i<1)add(flame(),{x:430+dx+20,y:600+dy*.85+30,s:.35,at:F(10,.3),out:outF,kind:'pop',tick:flick});});
+  [[-40,20],[30,-10],[50,70],[-20,80],[0,40]].forEach(([dx,dy],i)=>add(flame(),{x:960+dx*1.0,y:600+(dy+40)*.85+20,s:.38,at:F(10,.3)+i*.1,out:outF,kind:'pop',tick:flick}));
+  add(T('内脏脂肪少',40,C.ink),{x:430,y:845-20,at:F(10,.2),out:outF,kind:'fade'});
+  add(T('内脏脂肪多',40,C.ink),{x:960,y:845-20,at:F(10,.25),out:outF,kind:'fade'});
+  add(T('发炎 ↑',56,C.r),{x:960,y:330,at:F(10,.55),out:outF,kind:'pop'});
+  add(`<g><rect x="-230" y="-260" width="460" height="520" rx="36" fill="#fff" stroke="#e3ddd0" stroke-width="6"/>${T('肥胖青少年',42,C.ink,0,-215)}${T('🧒',80,C.ink,0,-120)}
+    <rect data-a="bar" x="-140" y="180" width="90" height="10" rx="12" fill="#e0904a"/><rect data-a="bar" x="50" y="180" width="90" height="10" rx="12" fill="${C.r}"/>${T('IgG',36,C.ink,-95,215)}${T('发炎指标',30,C.ink,95,215)}</g>`,
+    {x:1560,y:590,s:.95,at:F(10,.5),out:outF,kind:'right',tick:(lt,el)=>{const p=eo(seg(lt,.6,1.2));[[0,170],[1,140]].forEach(([i,h])=>{const r=el.q[i];r.setAttribute('height',(10+h*p).toFixed(1));r.setAttribute('y',(190-(10+h*p)).toFixed(1));});}});
+  /* --- B11：卡 --- */
+  const rowN=(y,em,solid,lab,cl)=>{
+    add(T(em,110),{x:230,y,at:b[11]+.3,kind:'pop'});
+    [['🍔','食物'],['🔥','腹部脂肪发炎'],['🔑','钥匙卡住']].forEach(([m,t],i)=>{
+      add(`<g><circle r="82" fill="#fff" stroke="${cl}" stroke-width="8"/>${T(m,82)}${T(t,34,C.ink,0,112)}</g>`,{x:560+i*400,y,at:b[11]+.5+i*.35+(solid?0:.5),kind:'pop'});
+      if(i<2)add(solid?arrow(-90,0,90,0,cl,12):`<g stroke="${cl}" stroke-width="10" stroke-dasharray="4 16" stroke-linecap="round"><line x1="-90" y1="0" x2="90" y2="0"/></g>${T('~',60,cl)}`,{x:760+i*400,y,at:b[11]+.9+i*.35+(solid?0:.5),kind:'fade'});});
+    add(`<g><rect x="-150" y="-36" width="300" height="72" rx="36" fill="${cl}"/>${T(lab,40,'#fff')}</g>`,{x:1700,y,at:b[11]+2.2,kind:'pop'});
+  };
+  rowN(470,'🐭',true,'✔ 完整',C.g);
+  rowN(690,'👥',false,'~ 一起出现',C.y);
+};
+BUILD[5]=(b,e)=>{
+  const F=Fx(b,e);
+  /* B0：小麦、奶、蛋都是红色 */
+  const items=[['🍞','小麦'],['🥛','奶'],['🥚','蛋']];
+  items.forEach(([m,n],i)=>{
+    const x=560+i*400;
+    add(`<g><rect x="-160" y="-150" width="320" height="300" rx="34" fill="#fff" stroke="${C.r}" stroke-width="8"/>${T(m,120,C.ink,0,-45)}${T(n,50,C.ink,0,55)}<circle cx="-60" cy="112" r="20" fill="${C.r}"/><rect x="-28" y="102" width="90" height="20" rx="10" fill="#f3d3d1"/></g>`,
+      {x,y:520,at:b[0]+.4+i*.5,out:F(1,.42),kind:'pop'});
+  });
+  add(`<g><rect x="-250" y="-34" width="500" height="68" rx="34" fill="#fff3c8" stroke="${C.y}" stroke-width="6"/>${T('👑 我们最常吃的',44)}</g>`,{x:960,y:330,at:F(0,.5),out:e[0],kind:'pop'});
+  /* B1：划掉，连带消失 */
+  const cardsOut=F(1,.42);
+  items.forEach((it,i)=>add(`<g stroke="${C.r}" stroke-width="18" stroke-linecap="round" data-a="x"><line x1="-130" y1="-120" x2="130" y2="120" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/><line x1="130" y1="-120" x2="-130" y2="120" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></g>`,
+    {x:560+i*400,y:520,at:b[1]+.3+i*.4,out:cardsOut,kind:'none',tick:(lt,el)=>{const p=eo(lt/.4);el.q[0].querySelectorAll('line').forEach((l,k)=>l.setAttribute('stroke-dashoffset',(1-clamp(p*2-k)).toFixed(3)));}}));
+  ['🍰','🧋','🍞'].forEach((m,i)=>{const x=660+i*300;
+    add(T(m,130),{x,y:520,at:cardsOut+.1+i*.15,out:F(1,.6)+i*.03,outKind:'shrink',kind:'pop'});
+    add(T('✖️',130),{x,y:520,at:F(1,.46)+i*.05,out:F(1,.6)+i*.03,outKind:'shrink',kind:'pop'});});
+  add(T('🥗🍗🥦',110),{x:640,y:520,at:F(1,.63),out:e[1],kind:'pop'});
+  add(T('更少 · 更原型',46,C.g),{x:640,y:640,at:F(1,.68),out:e[1],kind:'fade'});
+  add(`<g><circle r="100" fill="#f8d14f" stroke="#d99a1e" stroke-width="6"/>${T('内脏脂肪',34,C.ink,0,0)}</g>`,{x:1280,y:520,at:F(1,.63),out:e[1],kind:'pop',tick:(lt,el,abs)=>({ds:1-.45*eio(seg(abs,F(1,.72),(e[1]-b[1])*.2))})});
+  add(arrow(0,-45,0,45,C.g,16),{x:1500,y:520,at:F(1,.8),out:e[1],kind:'pop'});
+  /* B2：天平 */
+  const cx=960,cy=430,L=380;
+  const s2=(a)=>0;
+  add(`<g><rect x="-14" y="0" width="28" height="340" rx="10" fill="#a1887f"/><ellipse cy="345" rx="180" ry="26" fill="#8d6e63"/><circle r="26" fill="#6d4c41"/></g>`,{x:cx,y:cy,at:b[2]+.1,out:e[2]+9,kind:'up'});
+  const beamAngle=(abs)=>{const p=seg(abs,b[2]+2.2,1.2);return -14*ebk(p)+ (abs<b[2]+2.2?Math.sin(abs*3)*2:0)};
+  add(`<g data-a="bm"><rect x="-${L}" y="-12" width="${2*L}" height="24" rx="12" fill="#c9a26b" stroke="#8d6e63" stroke-width="5"/></g>`,{x:cx,y:cy,at:b[2]+.3,out:e[2]+9,kind:'none',tick:(lt,el,abs)=>{el.q[0].setAttribute('transform',`rotate(${beamAngle(abs).toFixed(2)})`);}});
+  [[-1,'left'],[1,'right']].forEach(([sg,nm])=>{
+    add(`<g><line x1="-120" y1="0" x2="0" y2="-150" stroke="#8d6e63" stroke-width="5"/><line x1="120" y1="0" x2="0" y2="-150" stroke="#8d6e63" stroke-width="5"/><path d="M-150 0 h300 a150 90 0 0 1 -300 0z" fill="#e0c9a0" stroke="#8d6e63" stroke-width="6"/></g>`,
+      {x:cx,y:cy,at:b[2]+.5,out:e[2]+9,kind:'none',tick:(lt,el,abs)=>{const a=beamAngle(abs)*Math.PI/180;return{dx:sg*L*Math.cos(a),dy:sg*L*Math.sin(a)+150}}});
+  });
+  const contentTick=(sg,yoff)=>(lt,el,abs)=>{const a=beamAngle(abs)*Math.PI/180;return{dx:sg*L*Math.cos(a),dy:sg*L*Math.sin(a)+yoff}};
+  add(`<g>${T('🍽️',120,C.ink,0,-60)}${T('吃法改变',50,C.ink,0,115)}</g>`,{x:cx,y:cy,at:b[2]+.8,out:e[2]+9,kind:'drop',tick:contentTick(-1,150)});
+  add(`<g>${T('❓',120,C.ink,0,-60)}${T('过敏减少',50,C.ink,0,115)}</g>`,{x:cx,y:cy,at:b[2]+1.2,out:e[2]+9,kind:'drop',tick:contentTick(1,150)});
+  add(T('≠',150,C.b),{x:cx,y:cy+230,at:b[2]+3.6,out:e[2]+9,kind:'pop'});
+};
+
+BUILD[6]=(b,e)=>{
+  const F=Fx(b,e);
+  const cards=[{n:'❓1',ic:'🍞🧪',q:'敏感检测',res:'IgG ≠ 有害',lamp:0},{n:'❓2',ic:'🍔🔥',q:'食物点火',res:'吃法会点火',lamp:1},{n:'❓3',ic:'🔥FAT',q:'内脏脂肪',res:'脂肪会变坏',lamp:2}];
+  board(cards,[b[0]+.3,b[0]+.7,b[0]+1.1],[F(1,.2),F(2,.2),F(3,.2)],b[4]);
+  /* B4：循环反转 */
+  add(fatCell(140,'hot'),{x:470,y:610,at:b[4]+.3,out:b[5],kind:'pop',tick:(lt,el,abs)=>({op:1-eo(seg(abs,b[4]+1.6,1.6))})});
+  add(fatCell(140,'happy'),{x:470,y:610,at:b[4]+.3,out:b[5],kind:'pop',tick:(lt,el,abs)=>({op:eo(seg(abs,b[4]+1.6,1.6))})});
+  add(smokeHtml(),{x:470,y:480,s:1.3,at:b[4]+.3,out:b[5],kind:'none',tick:(lt,el,abs)=>{smokeTick(lt,el,.45,140);return{op:1-eo(seg(abs,b[4]+.8,1.6))}}});
+  add(lockHtml(),{x:1010,y:640,s:.95,at:b[4]+.5,out:b[5],kind:'pop',tick:(lt,el,abs)=>{const p=eio(seg(abs,b[4]+1.6,.8));el.q[0].setAttribute('transform',`rotate(${-p*28} -44 -50) translate(0 ${-p*30})`);}});
+  add(keyHtml(),{x:830,y:654,s:.95,at:b[4]+.7,out:b[5],kind:'left',tick:(lt,el,abs)=>({sx:Math.cos(Math.PI*eio(seg(abs,b[4]+1.2,.8)))})});
+  const nodes=[['内脏脂肪 ↓',-90],['发炎指标 ↓',30],['肠道屏障 ↑',150]];
+  add(`<g data-a="ring"><circle r="150" fill="none" stroke="${C.g}" stroke-width="14" stroke-dasharray="120 40" stroke-linecap="round"/></g>`,{x:1550,y:610,at:b[4]+2.0,out:b[5],kind:'pop',tick:(lt,el)=>{el.q[0].setAttribute('transform',`rotate(${(lt*40).toFixed(1)})`);}});
+  add(T('🔁',90),{x:1550,y:610,at:b[4]+2.0,out:b[5],kind:'pop'});
+  [[0,-1],[1,.5],[2,.5]].forEach(()=>0);
+  [['脂肪 ↓',-90,-190],['发炎 ↓',150,90],['屏障 ↑',-150,90]].forEach(([t,dx,dy],i)=>add(`<g><rect x="-88" y="-34" width="176" height="68" rx="34" fill="#fff" stroke="${C.g}" stroke-width="6"/>${T(t,38)}</g>`,{x:1550+ (i===0?0:dx*1.0),y:610+(i===0?-190:dy*1.0),at:b[4]+2.4+i*.4,out:b[5],kind:'pop'}));
+  /* B5：结尾卡 */
+  add(`<g>${T('🚨',130)}${xmark(80,C.r,18)}</g>`,{x:560,y:640,at:b[5]+.6,kind:'pop'});
+  add(T('过敏',48,'#8a8377'),{x:560,y:760,at:b[5]+.9,kind:'fade'});
+  add(arrow(-110,0,110,0,C.b,14),{x:960,y:640,at:b[5]+1.2,kind:'fade'});
+  add(fatCell(90,'hot'),{x:1350,y:640,at:b[5]+1.4,kind:'pop'});
+  add(smokeHtml(),{x:1350,y:555,s:.8,at:b[5]+1.6,kind:'fade',tick:(lt,el)=>smokeTick(lt,el,.4,110)});
+  add(flame(),{x:1520,y:715,s:.9,at:b[5]+1.6,kind:'pop',tick:flick});
+  add(T('低度发炎：小火苗，细烟',44,C.r),{x:1400,y:780,at:b[5]+2.0,kind:'fade'});
+};
+/* ===================== 引擎：seek / UI / 播放 ===================== */
+const params=new URLSearchParams(location.search);
+const RENDER=params.get('render')==='1';
+if(RENDER)document.body.classList.add('render');
+const $=id=>document.getElementById(id);
+const svg=$('svg'),stage=$('stage');
+const ICON={animal:'🐭 动物实验',cell:'🧫 细胞实验',human:'👥 人体研究',case:'👤 个案'};
+
+function layout(){
+  SCENES.forEach(s=>{
+    const n=s.beats.length,D=s.end-s.start,MIN=Math.min(3.5,D/n);
+    const lens=s.beats.map(bt=>Math.max(bt.sub.replace(/\*\*/g,'').length,6));
+    const sum=lens.reduce((a,c)=>a+c,0),extra=Math.max(0,D-MIN*n);
+    let t=s.start;
+    s.beats.forEach((bt,i)=>{const d=MIN+extra*lens[i]/sum;bt.start=t;bt.end=(i===n-1)?s.end:t+d;t+=d;});
+  });
+}
+const fmt=x=>x.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+const plain=x=>x.replace(/\*\*/g,'');
+function build(){
+  SCENES.forEach((S,si)=>{
+    const root=document.createElementNS(NS,'g');root.style.display='none';svg.appendChild(root);
+    CUR={root,els:[]};S.root=root;S.els=CUR.els;
+    S.bt=S.beats.map(x=>x.start-S.start);S.be=S.beats.map(x=>x.end-S.start);
+    BUILD[si](S.bt,S.be);
+  });
+  window.__BEATS=SCENES.flatMap(S=>S.beats.map((x,i)=>({scene:S.id,beat:i,start:x.start,end:x.end})));
+}
+const measure=document.createElement('span');measure.style.cssText='position:absolute;visibility:hidden;white-space:nowrap;font-weight:700;left:-9999px';
+let lastKey=null,lastFit={};
+function fitFont(html,max){
+  const k=html+'|'+max;if(lastFit[k])return lastFit[k];
+  document.body.appendChild(measure);measure.innerHTML=html;
+  let fs=max;measure.style.fontSize=fs+'px';
+  while(measure.offsetWidth>1700-110&&fs>40){fs-=2;measure.style.fontSize=fs+'px';}
+  document.body.removeChild(measure);lastFit[k]=fs;return fs;
+}
+function seek(t){
+  t=clamp(t,0,DURATION-1e-4);
+  let si=SCENES.findIndex(s=>t>=s.start&&t<s.end);if(si<0)si=SCENES.length-1;
+  const S=SCENES[si],lt=t-S.start;
+  SCENES.forEach((s,i)=>{s.root.style.display=i===si?'':'none';});
+  const inP=eo(lt/.5),outP=clamp((S.end-t)/.35);
+  S.root.setAttribute('transform',`translate(${((1-inP)*90).toFixed(1)} 0)`);
+  S.root.setAttribute('opacity',(inP*Math.min(1,outP)).toFixed(3));
+  S.els.forEach(e=>updEl(e,lt));
+  // beat
+  let bi=S.beats.findIndex(x=>t>=x.start&&t<x.end);if(bi<0)bi=S.beats.length-1;
+  const B=S.beats[bi],key=si+'-'+bi;
+  if(key!==lastKey){
+    lastKey=key;
+    $('chip').textContent=S.chip;
+    $('badges').innerHTML=(B.badge||[]).map(([ty,c])=>`<div class="badge ${ty}">${ICON[ty]}${c?`<small>${c}</small>`:''}</div>`).join('');
+    const bn=$('banner');bn.className=B.card?'card':'';
+    const col={red:C.r,yellow:C.y,green:C.g}[B.card];
+    if(col)bn.style.setProperty('--c',col);
+    bn.style.top=(B.pos==='center'?'250px':'118px');bn.style.height=(B.pos==='center'?'200px':'112px');
+    const sp=bn.firstElementChild;
+    if(B.text){const h=fmt(B.text);const max=B.pos==='center'?96:(B.card?70:76);sp.innerHTML=h;sp.style.fontSize=fitFont(h,max)+'px';sp.style.display='';}else sp.style.display='none';
+    $('sub').firstElementChild.innerHTML=fmt(B.sub);
+  }
+  const bl=t-B.start;
+  const bp=ebk(clamp(bl/.5));
+  $('banner').style.opacity=Math.min(1,bl/.25).toFixed(3);
+  $('banner').style.transform=`scale(${(0.6+0.4*bp).toFixed(3)})`;
+  $('sub').firstElementChild.style.opacity=Math.min(1,bl/.3).toFixed(3);
+  $('chip').style.opacity=Math.min(1,lt/.4).toFixed(3);
+  $('progbar').style.width=(t/DURATION*1920).toFixed(1)+'px';
+  if(!RENDER){$('rng').value=t;$('tm').textContent=Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');}
+}
+function init(){
+  layout();build();
+  SCENES.forEach(s=>{if(s.start>0){const i=document.createElement('i');i.style.left=(s.start/DURATION*1920)+'px';$('prog').appendChild(i);}});
+  if(!RENDER){
+    SCENES.forEach(s=>{const bt=document.createElement('button');bt.textContent='第'+s.id+'幕';bt.onclick=()=>{cur=s.start+.01;seek(cur);};$('scenes').appendChild(bt);});
+    const fit=()=>{const w=innerWidth,h=innerHeight-56;const sc=Math.min(w/1920,h/1080);stage.style.transform=`scale(${sc})`;stage.style.left=((w-1920*sc)/2)+'px';stage.style.top='0px';};
+    fit();addEventListener('resize',fit);
+    let playing=false,last=0;cur=parseFloat(params.get('t')||'0');
+    const step=(ts)=>{if(playing){cur+=(ts-last)/1000;last=ts;if(cur>=DURATION){cur=DURATION-.01;playing=false;$('pp').textContent='▶ 播放';}seek(cur);}requestAnimationFrame(step);};
+    $('pp').onclick=()=>{playing=!playing;last=performance.now();$('pp').textContent=playing?'⏸ 暂停':'▶ 播放';};
+    $('rng').oninput=e=>{cur=parseFloat(e.target.value);seek(cur);};
+    addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();$('pp').click();}if(e.code==='ArrowRight'){cur+=5;seek(cur);}if(e.code==='ArrowLeft'){cur-=5;seek(cur);}});
+    requestAnimationFrame(step);
+  }else{stage.style.transform='none';stage.style.left='0';stage.style.top='0';}
+  seek(cur||0);
+  window.__ready=true;
+}
+let cur=0;
+window.__seek=seek;
+(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(init);
+</script>
+</body>
+</html>
