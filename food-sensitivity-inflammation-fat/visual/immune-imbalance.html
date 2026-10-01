@@ -1,0 +1,429 @@
+<title>免疫失衡与低度炎症</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap">
+<style>
+/* Layout: single reading column; three seesaws as a 3-up grid that stacks on phones; charts as small multiples (no dual axis). */
+:root {
+  --bg: #F5F6F7;
+  --surface: #FFFFFF;
+  --ink: #1B2126;
+  --ink-2: #48535B;
+  --muted: #76818A;
+  --line: #DCE1E5;
+  --pro: #B83E24;      /* 促炎一侧 */
+  --reg: #1A6FB0;      /* 调节一侧 */
+  --pro-soft: #F6E3DE;
+  --reg-soft: #DFEAF5;
+  --font-display: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15191C; --surface: #1D2226; --ink: #E7EBEE; --ink-2: #B4BDC4; --muted: #89939B; --line: #2F363B;
+    --pro: #D9603F; --reg: #0A9DBA; --pro-soft: #3A2520; --reg-soft: #17303A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15191C; --surface: #1D2226; --ink: #E7EBEE; --ink-2: #B4BDC4; --muted: #89939B; --line: #2F363B;
+  --pro: #D9603F; --reg: #0A9DBA; --pro-soft: #3A2520; --reg-soft: #17303A;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.7; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 64px; display: grid; gap: 56px; }
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: 0.01em; }
+h1 { font-size: clamp(28px, 5vw, 44px); line-height: 1.25; }
+h2 { font-size: clamp(20px, 3vw, 26px); line-height: 1.35; }
+h3 { font-size: 16px; margin: 0; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-data); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.lede { max-width: 62ch; color: var(--ink-2); font-size: 16px; }
+.src { font-family: var(--font-data); font-size: 11.5px; color: var(--muted); }
+.pro { color: var(--pro); }
+.reg { color: var(--reg); }
+section { display: grid; gap: 20px; min-width: 0; }
+.section-head { display: grid; gap: 8px; max-width: 70ch; }
+.section-head p { color: var(--ink-2); }
+
+/* hero */
+header { display: grid; gap: 16px; }
+.thesis { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.pill { font-size: 13px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+.pill b { font-weight: 700; }
+
+/* seesaws */
+.seesaws { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .seesaws { grid-template-columns: 1fr; } }
+.saw { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.saw-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.saw-title .axis { font-family: var(--font-data); font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
+.saw svg { width: 100%; height: auto; display: block; }
+.sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.side { border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.side.p { background: var(--pro-soft); }
+.side.r { background: var(--reg-soft); }
+.side h4 { margin: 0; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.side h4 .arrow { font-family: var(--font-data); }
+.side ul { margin: 0; padding-left: 16px; font-size: 13px; color: var(--ink); line-height: 1.6; }
+.saw .note { font-size: 13px; color: var(--ink-2); }
+
+/* charts */
+.charts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .charts { grid-template-columns: 1fr; } }
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 8px; min-width: 0; position: relative; }
+.chart h3 { font-size: 14px; }
+.chart .sub { font-size: 12.5px; color: var(--ink-2); }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart text { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
+.chart text.val { fill: var(--ink); font-size: 11.5px; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .bar { fill: var(--muted); opacity: .55; transition: opacity .15s; }
+.chart .bar.hi { fill: var(--pro); opacity: 1; }
+.chart .bar:hover, .chart .bar:focus { opacity: 1; outline: none; }
+.chart .hit { fill: transparent; cursor: default; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 12px; padding: 6px 9px; border-radius: 6px; white-space: nowrap; transform: translate(-50%, -110%); }
+details { font-size: 13px; color: var(--ink-2); }
+details summary { cursor: pointer; color: var(--ink); }
+.tbl-wrap { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; font-size: 12.5px; min-width: 520px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+td.num, th.num { text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.callout { border-left: 3px solid var(--pro); padding: 4px 0 4px 14px; max-width: 70ch; color: var(--ink); }
+
+/* context */
+.context { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 720px) { .context { grid-template-columns: 1fr; } }
+.ctx { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.ctx .tag { font-family: var(--font-data); font-size: 11px; letter-spacing: .08em; color: var(--muted); }
+.ctx .verdict { font-weight: 700; font-size: 15px; }
+.ctx ul { margin: 0; padding-left: 18px; font-size: 13.5px; }
+
+/* measured vs inferred */
+.ledger { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+@media (max-width: 720px) { .ledger { grid-template-columns: 1fr; } }
+.ledger > div { padding: 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.ledger > div + div { border-left: 1px solid var(--line); }
+@media (max-width: 720px) { .ledger > div + div { border-left: 0; border-top: 1px solid var(--line); } }
+.ledger ul { margin: 0; padding-left: 18px; font-size: 13.5px; }
+
+footer { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 20px; }
+footer ol { margin: 0; padding-left: 20px; font-size: 12.5px; color: var(--ink-2); }
+a { color: var(--reg); }
+:focus-visible { outline: 2px solid var(--reg); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <span class="eyebrow">Low-grade inflammation · immune dysregulation</span>
+    <h1>免疫失衡：<span class="pro">过度</span>和<span class="reg">不足</span>同时发生</h1>
+    <p class="lede">在 21 篇低度炎症文献里，免疫系统很少被描述成“太强”或“太弱”。更常见的描述是 <b>dysregulation</b>：促炎的一侧偏重，负责调节和收尾的一侧偏轻，而且这种偏斜会自我维持。</p>
+    <div class="thesis">
+      <span class="pill"><b class="pro">●</b> 促炎 / 启动侧偏重</span>
+      <span class="pill"><b class="reg">●</b> 调节 / 收尾侧偏轻</span>
+      <span class="pill">讨论的是代谢性低度炎症，不涉及自身免疫病</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="s1">
+    <div class="section-head">
+      <span class="eyebrow">三条天平</span>
+      <h2 id="s1">“失衡”具体指哪三件事</h2>
+      <p>每一条天平都往红色那一侧倾斜。三条同时成立，所以低度炎症既点得着火，又灭不掉火。</p>
+    </div>
+
+    <div class="seesaws">
+      <article class="saw">
+        <div class="saw-title"><h3>① 促炎 vs 调节</h3><span class="axis">PRO vs REGULATORY</span></div>
+        <svg viewBox="0 0 320 120" role="img" aria-label="天平向促炎一侧倾斜">
+          <g transform="rotate(-9 160 80)">
+            <rect x="24" y="74" width="272" height="6" rx="3" style="fill:var(--ink-2)"/>
+            <rect x="30" y="34" width="74" height="40" rx="6" style="fill:var(--pro)"/>
+            <text x="67" y="59" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF" style="font-family:var(--font-body)">M1 · Th1</text>
+            <rect x="216" y="50" width="78" height="24" rx="5" style="fill:var(--reg)"/>
+            <text x="255" y="66.5" text-anchor="middle" font-size="12" font-weight="700" fill="#FFFFFF" style="font-family:var(--font-body)">M2 · Treg</text>
+          </g>
+          <path d="M160 82 L146 112 L174 112 Z" style="fill:var(--muted)"/>
+        </svg>
+        <div class="sides">
+          <div class="side p"><h4><span class="arrow pro">↑</span>偏多</h4>
+            <ul><li>M1 巨噬细胞</li><li>CD8⁺ T、Th1 浸润</li><li>TNF-α、IL-1β、IL-6</li></ul></div>
+          <div class="side r"><h4><span class="arrow reg">↓</span>偏少</h4>
+            <ul><li>M2 巨噬细胞</li><li>Treg、ILC2</li><li>IL-10、adiponectin</li></ul></div>
+        </div>
+        <p class="note">肥胖脂肪组织中巨噬细胞从 M2 转向 M1，并与胰岛素阻抗相关。Treg、ILC2、IL-10 这一侧保留得较好的人，较接近“代谢健康型肥胖”。</p>
+        <p class="src">Pereira 2014 · Khanna 2022 · León-Pedroza 2015</p>
+      </article>
+
+      <article class="saw">
+        <div class="saw-title"><h3>② 先天 vs 适应性</h3><span class="axis">INNATE vs ADAPTIVE</span></div>
+        <svg viewBox="0 0 320 120" role="img" aria-label="天平向先天免疫一侧倾斜">
+          <g transform="rotate(-9 160 80)">
+            <rect x="24" y="74" width="272" height="6" rx="3" style="fill:var(--ink-2)"/>
+            <rect x="30" y="34" width="74" height="40" rx="6" style="fill:var(--pro)"/>
+            <text x="67" y="59" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF" style="font-family:var(--font-body)">先天</text>
+            <rect x="216" y="50" width="78" height="24" rx="5" style="fill:var(--reg)"/>
+            <text x="255" y="66.5" text-anchor="middle" font-size="12" font-weight="700" fill="#FFFFFF" style="font-family:var(--font-body)">适应性</text>
+          </g>
+          <path d="M160 82 L146 112 L174 112 Z" style="fill:var(--muted)"/>
+        </svg>
+        <div class="sides">
+          <div class="side p"><h4><span class="arrow pro">↑</span>过度警戒</h4>
+            <ul><li>粒细胞偏高</li><li>Trained immunity：被高糖高脂“训练”后更易起反应</li><li>PRR 被内源性损伤信号持续激活</li></ul></div>
+          <div class="side r"><h4><span class="arrow reg">↓</span>功能变弱</h4>
+            <ul><li>淋巴细胞相对偏低</li><li>疫苗反应下降</li><li>感染易感、伤口愈合变差</li></ul></div>
+        </div>
+        <p class="note">Immunosenescence 同时带来“持续的炎症反应”和“对疫苗反应下降”，这正是同一系统里过度和不足并存。</p>
+        <p class="src">Sanada 2018 · Chen 2019 · van de Vyver 2023 · Bonaccio 2016</p>
+      </article>
+
+      <article class="saw">
+        <div class="saw-title"><h3>③ 启动 vs 收尾</h3><span class="axis">INITIATION vs RESOLUTION</span></div>
+        <svg viewBox="0 0 320 120" role="img" aria-label="天平向启动一侧倾斜">
+          <g transform="rotate(-9 160 80)">
+            <rect x="24" y="74" width="272" height="6" rx="3" style="fill:var(--ink-2)"/>
+            <rect x="30" y="34" width="74" height="40" rx="6" style="fill:var(--pro)"/>
+            <text x="67" y="59" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF" style="font-family:var(--font-body)">点火</text>
+            <rect x="216" y="50" width="78" height="24" rx="5" style="fill:var(--reg)"/>
+            <text x="255" y="66.5" text-anchor="middle" font-size="12" font-weight="700" fill="#FFFFFF" style="font-family:var(--font-body)">灭火</text>
+          </g>
+          <path d="M160 82 L146 112 L174 112 Z" style="fill:var(--muted)"/>
+        </svg>
+        <div class="sides">
+          <div class="side p"><h4><span class="arrow pro">↑</span>持续启动</h4>
+            <ul><li>TLR4 · NF-κB · NLRP3</li><li>ROS ⇄ 细胞因子正反馈</li><li>SASP 持续分泌</li></ul></div>
+          <div class="side r"><h4><span class="arrow reg">↓</span>收尾失灵</h4>
+            <ul><li>SPMs 谱改变</li><li>巨噬细胞未转向修复表型</li><li>衰老免疫细胞不响应调节信号</li></ul></div>
+        </div>
+        <p class="note">正常炎症打完会进入 resolution phase。低度慢性炎症的核心就是这一步失败，结果是持续炎症和纤维化。</p>
+        <p class="src">van de Vyver 2023 · Cifuentes 2024 · Sanada 2018</p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="s2">
+    <div class="section-head">
+      <span class="eyebrow">Moli-sani · n = 20,337 · 中位追踪 7.6 年</span>
+      <h2 id="s2">在常规血检里，失衡可以被看见</h2>
+      <p>INFLA-score 的四项之一是 <b>粒细胞 / 淋巴细胞比（G/L）</b>，也就是先天免疫细胞对适应性免疫细胞的比例。下面三张图都来自 Bonaccio 2016 的原表。</p>
+    </div>
+
+    <div class="charts">
+      <figure class="chart" style="margin:0">
+        <h3>G/L 比随炎症分数升高</h3>
+        <p class="sub">各 INFLA 四分位的 G/L 平均值</p>
+        <svg id="c1" viewBox="0 0 300 200" role="img" aria-label="G/L 比：Q1 1.51，Q2 1.79，Q3 2.06，Q4 2.52"></svg>
+        <p class="src">Bonaccio 2016 · Table 1（年龄、性别校正）</p>
+      </figure>
+      <figure class="chart" style="margin:0">
+        <h3>全因死亡风险</h3>
+        <p class="sub">多变量校正 HR，Q1 = 1.00</p>
+        <svg id="c2" viewBox="0 0 300 200" role="img" aria-label="死亡风险比：Q1 1.00，Q2 1.11，Q3 1.44，Q4 1.44"></svg>
+        <p class="src">Bonaccio 2016 · Table 2</p>
+      </figure>
+      <figure class="chart" style="margin:0">
+        <h3>哪一项对预测死亡贡献最大</h3>
+        <p class="sub">从总分拿掉该项后，模型变差多少（AIC 增加）</p>
+        <svg id="c3" viewBox="0 0 300 200" role="img" aria-label="AIC 增加：G/L 6.7，CRP 5.6，白细胞 3.1，血小板 2.3"></svg>
+        <p class="src">Bonaccio 2016 · Table 2</p>
+      </figure>
+    </div>
+
+    <p class="callout">G/L 比是四项里对死亡模型贡献最大的一项。换句话说，一个“免疫细胞比例偏斜”的指标，在两万多名没有急性炎症的成人身上，和死亡风险有独立关联。</p>
+
+    <details>
+      <summary>查看数据表</summary>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>INFLA 四分位</th><th class="num">分数范围</th><th class="num">G/L 平均</th><th class="num">CRP mg/L</th><th class="num">死亡/人数</th><th class="num">HR (95% CI)</th></tr></thead>
+          <tbody>
+            <tr><td>Q1</td><td class="num">−16 至 −5</td><td class="num">1.51</td><td class="num">0.72</td><td class="num">148 / 5,054</td><td class="num">1.00</td></tr>
+            <tr><td>Q2</td><td class="num">−4 至 −1</td><td class="num">1.79</td><td class="num">1.16</td><td class="num">180 / 5,079</td><td class="num">1.11 (0.90–1.39)</td></tr>
+            <tr><td>Q3</td><td class="num">0 至 3</td><td class="num">2.06</td><td class="num">1.62</td><td class="num">247 / 5,001</td><td class="num">1.44 (1.17–1.77)</td></tr>
+            <tr><td>Q4</td><td class="num">4 至 16</td><td class="num">2.52</td><td class="num">2.75</td><td class="num">262 / 5,203</td><td class="num">1.44 (1.17–1.77)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section aria-labelledby="s3">
+    <div class="section-head">
+      <span class="eyebrow">情境决定方向</span>
+      <h2 id="s3">同一类免疫细胞，换个地方意义相反</h2>
+      <p>“失衡”不能简化成某一边太高就不好。是否有问题，要看在哪个组织、哪个情境。</p>
+    </div>
+    <div class="context">
+      <div class="ctx">
+        <span class="tag">代谢情境 · 脂肪组织</span>
+        <p class="verdict reg">Th2 / ILC2 / M2 这一侧是保护性的</p>
+        <ul>
+          <li>ILC2、Treg、IL-10 对抗脂肪组织炎症和胰岛素阻抗</li>
+          <li>这一侧被削弱时，M1 和 Th1 占上风</li>
+        </ul>
+        <p class="src">Pereira 2014</p>
+      </div>
+      <div class="ctx">
+        <span class="tag">过敏情境</span>
+        <p class="verdict pro">Th2 偏高本身就是问题</p>
+        <ul>
+          <li>IgE、肥大细胞、嗜酸性粒细胞介导的过敏反应</li>
+          <li>和代谢性低度炎症是不同的免疫轴</li>
+        </ul>
+        <p class="src">一般免疫学背景，不出自本批 21 篇文献</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s4">
+    <div class="section-head">
+      <span class="eyebrow">讲这个角度前要知道</span>
+      <h2 id="s4">哪些在人身上测得到，哪些主要来自组织和动物研究</h2>
+    </div>
+    <div class="ledger">
+      <div>
+        <h3>人体血液里可直接测</h3>
+        <ul>
+          <li>CRP / hs-CRP</li>
+          <li>白细胞、血小板计数</li>
+          <li>G/L 比、NLR</li>
+          <li>INFLA-score（以上四项组合）</li>
+          <li>IL-6、TNF-α（研究中常用）</li>
+        </ul>
+      </div>
+      <div>
+        <h3>主要来自组织、动物或细胞研究</h3>
+        <ul>
+          <li>脂肪组织里 M1 / M2、Treg、ILC2 的比例</li>
+          <li>Trained immunity 的表观遗传机制；小鼠减重后脂肪炎症仍持续</li>
+          <li>SPMs 与收尾失败的细节</li>
+          <li>衰老细胞清除的效果</li>
+        </ul>
+      </div>
+    </div>
+    <p class="lede" style="font-size:14px">“免疫失衡”不是这些论文的正式术语。论文用的是 dysregulation、immunosenescence、failure to resolve。作为沟通用语可以，但它描述的是一种状态，不是诊断。</p>
+  </section>
+
+  <footer>
+    <span class="eyebrow">来源</span>
+    <ol>
+      <li>Bonaccio M et al. A score of low-grade inflammation and risk of mortality. <i>Haematologica</i> 2016;101:1434–41.</li>
+      <li>Pereira SS, Alvarez-Leite JI. Low-grade inflammation, obesity, and diabetes. <i>Curr Obes Rep</i> 2014;3:422–31.</li>
+      <li>van de Vyver M. Immunology of chronic low-grade inflammation: relationship with metabolic function. <i>J Endocrinol</i> 2023;257:e220271.</li>
+      <li>Sanada F et al. Source of chronic inflammation in aging. <i>Front Cardiovasc Med</i> 2018;5:12.</li>
+      <li>Chen Y, Liu S, Leng SX. Chronic low-grade inflammatory phenotype (CLIP) and senescent immune dysregulation. <i>Clin Ther</i> 2019;41:400–9.</li>
+      <li>León-Pedroza JI et al. Low-grade systemic inflammation and the development of metabolic diseases. <i>Cir Cir</i> 2015;83:543–51.</li>
+      <li>Cifuentes M et al. Low-grade chronic inflammation: a shared mechanism for chronic diseases. <i>Physiology</i> 2025;40.</li>
+      <li>Khanna D et al. Obesity: a chronic low-grade inflammation and its markers. <i>Cureus</i> 2022;14:e22711.</li>
+    </ol>
+  </footer>
+</div>
+
+<script>
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, parent) {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  function tipFor(svg) {
+    const fig = svg.closest(".chart");
+    let t = fig.querySelector(".tip");
+    if (!t) { t = document.createElement("div"); t.className = "tip"; t.hidden = true; fig.appendChild(t); }
+    return t;
+  }
+  function showTip(svg, x, y, text) {
+    const t = tipFor(svg);
+    const r = svg.getBoundingClientRect(), fr = svg.closest(".chart").getBoundingClientRect();
+    const vb = svg.viewBox.baseVal, s = r.width / vb.width;
+    t.textContent = text;
+    t.style.left = (r.left - fr.left + x * s) + "px";
+    t.style.top = (r.top - fr.top + y * s) + "px";
+    t.hidden = false;
+  }
+  function hideTip(svg) { tipFor(svg).hidden = true; }
+
+  // Vertical bars, one series, scale from zero. Highlight index gets the accent.
+  function vbars(id, data, opt) {
+    const svg = document.getElementById(id);
+    const W = 300, H = 200, L = 34, R = 8, T = 22, B = 26;
+    const pw = W - L - R, ph = H - T - B;
+    const max = opt.max;
+    const y = v => T + ph - (v / max) * ph;
+    opt.ticks.forEach(v => {
+      el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: "grid" }, svg);
+      el("text", { x: L - 6, y: y(v) + 3.5, "text-anchor": "end" }, svg).textContent = opt.fmtTick(v);
+    });
+    const step = pw / data.length, bw = Math.min(40, step * 0.56);
+    data.forEach((d, i) => {
+      const cx = L + step * i + step / 2, top = y(d.v), h = T + ph - top;
+      const g = el("g", {}, svg);
+      const r = Math.min(4, h / 2);
+      el("path", { class: "bar" + (i === opt.hi ? " hi" : ""), tabindex: "0",
+        d: `M${cx - bw / 2},${T + ph} V${top + r} Q${cx - bw / 2},${top} ${cx - bw / 2 + r},${top} H${cx + bw / 2 - r} Q${cx + bw / 2},${top} ${cx + bw / 2},${top + r} V${T + ph} Z`,
+        "aria-label": d.label + " " + d.tip }, g);
+      el("text", { x: cx, y: top - 6, "text-anchor": "middle", class: "val" }, g).textContent = opt.fmt(d.v);
+      el("text", { x: cx, y: H - 8, "text-anchor": "middle" }, g).textContent = d.label;
+      const hit = el("rect", { class: "hit", x: cx - step / 2, y: T, width: step, height: ph }, g);
+      const on = () => showTip(svg, cx, top - 16, d.label + "：" + d.tip);
+      hit.addEventListener("mouseenter", on); hit.addEventListener("mouseleave", () => hideTip(svg));
+      g.querySelector(".bar").addEventListener("focus", on); g.querySelector(".bar").addEventListener("blur", () => hideTip(svg));
+    });
+    el("line", { x1: L, x2: W - R, y1: T + ph, y2: T + ph, style: "stroke:var(--muted);stroke-width:1" }, svg);
+  }
+
+  // Horizontal bars, sorted, one series.
+  function hbars(id, data, opt) {
+    const svg = document.getElementById(id);
+    const W = 300, H = 200, L = 58, R = 34, T = 14, B = 22;
+    const pw = W - L - R, ph = H - T - B;
+    const x = v => L + (v / opt.max) * pw;
+    opt.ticks.forEach(v => {
+      el("line", { x1: x(v), x2: x(v), y1: T, y2: T + ph, class: "grid" }, svg);
+      el("text", { x: x(v), y: H - 6, "text-anchor": "middle" }, svg).textContent = v;
+    });
+    const step = ph / data.length, bh = Math.min(26, step * 0.6);
+    data.forEach((d, i) => {
+      const cy = T + step * i + step / 2, right = x(d.v), r = Math.min(4, bh / 2);
+      const g = el("g", {}, svg);
+      el("path", { class: "bar" + (i === opt.hi ? " hi" : ""), tabindex: "0",
+        d: `M${L},${cy - bh / 2} H${right - r} Q${right},${cy - bh / 2} ${right},${cy - bh / 2 + r} V${cy + bh / 2 - r} Q${right},${cy + bh / 2} ${right - r},${cy + bh / 2} H${L} Z`,
+        "aria-label": d.label + " " + d.tip }, g);
+      el("text", { x: L - 8, y: cy + 4, "text-anchor": "end", class: "val" }, g).textContent = d.label;
+      el("text", { x: right + 6, y: cy + 4, class: "val" }, g).textContent = d.v.toFixed(1);
+      const hit = el("rect", { class: "hit", x: L, y: cy - step / 2, width: pw, height: step }, g);
+      const on = () => showTip(svg, Math.max(right, L + 60), cy - bh / 2 - 4, d.label + "：" + d.tip);
+      hit.addEventListener("mouseenter", on); hit.addEventListener("mouseleave", () => hideTip(svg));
+      g.querySelector(".bar").addEventListener("focus", on); g.querySelector(".bar").addEventListener("blur", () => hideTip(svg));
+    });
+    el("line", { x1: L, x2: L, y1: T, y2: T + ph, style: "stroke:var(--muted);stroke-width:1" }, svg);
+  }
+
+  vbars("c1", [
+    { label: "Q1", v: 1.51, tip: "G/L 1.51" },
+    { label: "Q2", v: 1.79, tip: "G/L 1.79" },
+    { label: "Q3", v: 2.06, tip: "G/L 2.06" },
+    { label: "Q4", v: 2.52, tip: "G/L 2.52" }
+  ], { max: 3, ticks: [0, 1, 2, 3], hi: 3, fmt: v => v.toFixed(2), fmtTick: v => v });
+
+  vbars("c2", [
+    { label: "Q1", v: 1.00, tip: "HR 1.00（参照组）" },
+    { label: "Q2", v: 1.11, tip: "HR 1.11（0.90–1.39）" },
+    { label: "Q3", v: 1.44, tip: "HR 1.44（1.17–1.77）" },
+    { label: "Q4", v: 1.44, tip: "HR 1.44（1.17–1.77）" }
+  ], { max: 1.6, ticks: [0, 0.4, 0.8, 1.2, 1.6], hi: 3, fmt: v => v.toFixed(2), fmtTick: v => v.toFixed(1) });
+
+  hbars("c3", [
+    { label: "G/L 比", v: 6.7, tip: "拿掉后 AIC +6.7" },
+    { label: "CRP", v: 5.6, tip: "拿掉后 AIC +5.6" },
+    { label: "白细胞", v: 3.1, tip: "拿掉后 AIC +3.1" },
+    { label: "血小板", v: 2.3, tip: "拿掉后 AIC +2.3" }
+  ], { max: 8, ticks: [0, 2, 4, 6, 8], hi: 0 });
+})();
+</script>
