@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;700;900&display=swap">
 <style>
-/* Layout: one 1600×900 sticker board, scaled to fit; one idea per screen, the Dream Board is the hero that keeps coming back. */
+/* Layout: one 1600×900 sticker board, scaled to fit. The hand-drawn life dashboard is the recurring hero; one idea per screen. */
 :root {
   color-scheme: light;
   --paper: #E6F0F7;
@@ -11,13 +11,14 @@
   --ink: #1E2A47;
   --muted: #5B6B85;
   --white: #FFFFFF;
+  --panel: #EEF2F6;
   --work: #FF9B3D;
   --life: #2FBF86;
   --play: #3D9BFF;
-  --love: #FF6464;
+  --love: #FF5A5A;
   --learn: #9B7BF2;
   --sun: #FFD23F;
-  --soft: #D9EFE4;
+  --soft: #CDEFDF;
   --display: "ZCOOL KuaiLe", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   --body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
   --pop: cubic-bezier(.34, 1.56, .64, 1);
@@ -51,9 +52,11 @@ body { margin: 0; overflow: hidden; background: var(--paper); color: var(--ink);
 .stk.ink { background: var(--ink); color: var(--white); }
 .stk.round { border-radius: 999px; }
 .stk small { display: block; font-family: var(--body); font-size: .5em; font-weight: 700; opacity: .85; margin-top: 4px; }
-.tag { font-size: 26px; padding: 6px 22px; }
+.chip { font-size: 26px; padding: 6px 22px; }
 .tape { position: absolute; width: 120px; height: 34px; background: rgba(255, 210, 63, .78); top: -18px; left: 50%;
   transform: translateX(-50%) rotate(-4deg); box-shadow: 0 2px 4px rgba(30,42,71,.12); z-index: 2; }
+.photo { background: var(--white); padding: 14px; border-radius: 10px; box-shadow: 0 18px 40px -14px rgba(30,42,71,.5); transform: rotate(var(--r, 0deg)); }
+.photo img { display: block; border-radius: 4px; }
 
 /* ---------- Build steps: .f0 pops on entry, .fN pops at click N ---------- */
 .f0, .f1, .f2, .f3 { opacity: 0; transform: scale(.35) rotate(calc(var(--r, 0deg) - 16deg));
@@ -61,12 +64,59 @@ body { margin: 0; overflow: hidden; background: var(--paper); color: var(--ink);
 .active .f0, .st1 .f1, .st2 .f2, .st3 .f3 { opacity: 1; transform: scale(1) rotate(var(--r, 0deg)); transition-delay: var(--d, 0s); }
 svg .f0, svg .f1, svg .f2 { transform-box: fill-box; transform-origin: center; }
 .st1 .x1, .st2 .x2 { opacity: 0 !important; transform: scale(.6) rotate(10deg) !important; transition-delay: 0s !important; }
-.draw { stroke-dasharray: 0 100; transition: stroke-dasharray 1s ease; }
+.draw { stroke-dasharray: 0 100; transition: stroke-dasharray .9s ease; }
 .active .d0, .st1 .d1, .st2 .d2 { stroke-dasharray: 100 0; transition-delay: var(--d, 0s); }
 .strike { position: relative; }
 .strike::after { content: ""; position: absolute; left: -4%; top: 50%; height: 8px; width: 0; background: var(--love);
-  border-radius: 8px; transform: rotate(-3deg); transition: width .5s ease .3s; }
+  border-radius: 8px; transform: rotate(-3deg); transition: width .5s ease .2s; }
 .st1 .strike.k1::after, .st2 .strike.k2::after { width: 108%; }
+
+/* ---------- Life dashboard (after Designing Your Life) ---------- */
+.dash { position: relative; transform: rotate(var(--r, -1deg)); }
+.dash-tab { position: absolute; left: 50%; top: -62px; transform: translateX(-50%); padding: 10px 46px 18px;
+  background: var(--white); border: 6px solid var(--ink); border-bottom: 0; border-radius: 90px 90px 0 0;
+  font-family: var(--display); font-size: 34px; letter-spacing: .12em; }
+.dash-body { display: flex; background: var(--white); border: 6px solid var(--ink); border-radius: 14px;
+  box-shadow: 0 18px 36px -14px rgba(30,42,71,.45); }
+.dash-lights { display: flex; flex-direction: column; justify-content: space-around; padding: 22px 18px;
+  background: var(--panel); border-right: 6px solid var(--ink); border-radius: 8px 0 0 8px; }
+.light { width: 24px; height: 24px; border-radius: 50%; border: 5px solid var(--ink); background: var(--white); position: relative; }
+.light.warn { background: var(--love); animation: blink 1s steps(2, start) infinite; }
+.light.warn::before, .light.warn::after { content: ""; position: absolute; width: 14px; height: 4px; background: var(--love); border-radius: 4px; top: -12px; }
+.light.warn::before { left: -14px; transform: rotate(35deg); }
+.light.warn::after { right: -14px; transform: rotate(-35deg); }
+@keyframes blink { 50% { background: #FFC2C2; } }
+.dash-rows { display: flex; flex-direction: column; gap: 26px; padding: 30px 36px; background: var(--panel); margin: 12px; border: 5px solid var(--ink); border-radius: 6px; }
+.drow { display: flex; align-items: center; gap: 24px; }
+.dlabel { width: 170px; font-family: var(--display); font-size: 40px; letter-spacing: .04em; }
+.track { position: relative; height: 46px; border: 5px solid var(--ink); border-radius: 6px; background: var(--white); overflow: hidden; }
+.fill { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--v, 0) * 100%); background: var(--c); transition: width 1.1s var(--pop); }
+.tick { position: absolute; top: 0; bottom: 0; width: 4px; background: var(--ink); }
+.dnote { font-size: 27px; font-weight: 900; color: var(--muted); white-space: nowrap; }
+
+/* ---------- Day timeline ---------- */
+.tl { position: absolute; left: 160px; top: 420px; width: 1280px; height: 100px; }
+.seg { position: absolute; top: 0; height: 100px; border: 6px solid var(--white); box-shadow: 0 12px 22px -10px rgba(30,42,71,.4);
+  display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 40px; color: var(--white); }
+.seg.l { background: var(--life); }
+.seg.w { background: var(--work); z-index: 2; }
+.lifeall { position: absolute; left: -26px; top: -78px; width: 1332px; height: 236px; border-radius: 30px; background: var(--soft);
+  border: 7px solid var(--white); box-shadow: 0 14px 26px -8px rgba(30,42,71,.35); opacity: 0; transform: scale(.94);
+  transition: opacity .5s ease, transform .6s var(--pop); }
+.st2 .lifeall { opacity: 1; transform: scale(1); }
+.lifeall span { position: absolute; left: 30px; top: 6px; font-family: var(--display); font-size: 40px; color: var(--life); }
+.hour { position: absolute; top: 130px; transform: translateX(-50%); font-size: 24px; font-weight: 900; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bubble { position: relative; background: var(--white); border-radius: 26px; padding: 16px 28px; font-size: 32px; font-weight: 900;
+  box-shadow: 0 14px 26px -8px rgba(30,42,71,.35); }
+.bubble::after { content: ""; position: absolute; left: 40px; bottom: -18px; border: 12px solid transparent; border-top: 14px solid var(--white); }
+
+/* ---------- Phone ---------- */
+.phone { width: 420px; height: 520px; border-radius: 48px; background: var(--white); border: 7px solid var(--white);
+  box-shadow: 0 18px 40px -14px rgba(30,42,71,.5); display: flex; flex-direction: column; align-items: center; gap: 22px; padding-top: 34px; }
+.phone .status { font-family: var(--display); font-size: 40px; color: var(--muted); }
+.notif { width: 350px; border-radius: 22px; padding: 18px 22px; background: var(--panel); font-size: 26px; font-weight: 900; line-height: 1.45;
+  animation: ping 1.6s ease-in-out infinite; }
+@keyframes ping { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
 /* ---------- HUD ---------- */
 #hud { position: absolute; left: 40px; right: 40px; bottom: 24px; display: flex; align-items: center; gap: 18px;
@@ -83,178 +133,144 @@ svg .f0, svg .f1, svg .f2 { transform-box: fill-box; transform-origin: center; }
   font-size: 20px; cursor: pointer; box-shadow: 0 6px 14px -6px rgba(30,42,71,.4); }
 #nav button:focus-visible { outline: 3px solid var(--play); outline-offset: 2px; }
 
-/* ---------- Slide pieces ---------- */
-.photo { background: var(--white); padding: 14px; border-radius: 10px; box-shadow: 0 18px 40px -14px rgba(30,42,71,.5); transform: rotate(var(--r, 0deg)); }
-.photo img { display: block; border-radius: 4px; }
-
-/* Dream Board → Life circle morph */
-.morph { position: absolute; left: 800px; top: 440px; width: 880px; height: 660px; border: 14px solid var(--white); border-radius: 12px;
-  overflow: hidden; background: var(--white); box-shadow: 0 18px 40px -14px rgba(30,42,71,.5);
-  transform: translate(-50%, -50%) rotate(-1.5deg);
-  transition: width .9s var(--ease), height .9s var(--ease), border-radius .9s var(--ease), transform .9s var(--ease); }
-.morph img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.st1 .morph { width: 330px; height: 330px; border-radius: 50%; transform: translate(-50%, -50%) rotate(0deg); }
-#lifeDonut .draw { transition-duration: .7s; }
-
-/* scale */
-.wobble { animation: wobble 2.4s ease-in-out infinite; transform-origin: 800px 330px; transform-box: view-box; }
-@keyframes wobble { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
-.panA { animation: panA 2.4s ease-in-out infinite; }
-.panB { animation: panB 2.4s ease-in-out infinite; }
-@keyframes panA { 0%,100% { transform: translateY(36px); } 50% { transform: translateY(-36px); } }
-@keyframes panB { 0%,100% { transform: translateY(-36px); } 50% { transform: translateY(36px); } }
-
-/* phones */
-.phone { width: 400px; height: 430px; border-radius: 48px; background: var(--white); border: 7px solid var(--white);
-  box-shadow: 0 18px 40px -14px rgba(30,42,71,.5); display: flex; flex-direction: column; align-items: center; gap: 22px; padding-top: 34px; }
-.phone .clock { font-family: var(--display); font-size: 44px; color: var(--muted); }
-.bubble { width: 330px; border-radius: 24px; padding: 18px 22px; font-size: 27px; font-weight: 700; line-height: 1.45; }
-.bubble.sad { background: #FFE2E2; }
-.bubble.glad { background: var(--soft); }
-.face { font-size: 110px; line-height: 1; }
-
-/* work slice */
-.workarc { transition: stroke-dasharray 1.1s var(--pop); }
-.when { transition: opacity .4s, transform .5s var(--pop); opacity: .25; transform: scale(.92) rotate(var(--r, 0deg)); }
-.when.now { opacity: 1; transform: scale(1) rotate(var(--r, 0deg)); }
-
-/* questions collapse into one */
-.q { transition: transform .8s var(--ease), opacity .5s ease; }
-.st2 .q { transform: translate(var(--dx), var(--dy)) scale(.2) !important; opacity: 0 !important; transition-delay: 0s !important; }
-.bg-board { transition: opacity .6s, filter .6s; }
-.st2 .bg-board { opacity: .25; filter: blur(2px); }
-
-/* final line */
-.typing { overflow: hidden; white-space: nowrap; width: 0; }
-.active .typing { animation: type 2.2s steps(56, end) forwards; animation-delay: var(--d, .4s); }
-@keyframes type { to { width: 100%; } }
-
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
 </style>
 
 <div id="viewport">
   <div id="stage">
 
-    <!-- 0 · Title -->
-    <section class="slide" data-steps="0" data-ch="开场">
-      <div class="at center" style="top:250px"><div class="stk f0" style="--r:-2deg;font-size:118px;padding:26px 56px">生活和工作<br>应该分开吗？</div></div>
-      <div class="at" style="left:230px;top:170px"><div class="stk work round f0" style="--r:-12deg;--d:.35s;font-size:46px">Work</div></div>
-      <div class="at" style="left:1230px;top:600px"><div class="stk life round f0" style="--r:10deg;--d:.5s;font-size:46px">Life</div></div>
+    <!-- 0 · Title + answer -->
+    <section class="slide" data-steps="1" data-ch="开场">
+      <div class="at center" style="top:150px"><div class="stk f0" style="--r:-2deg;font-size:112px;padding:24px 56px">生活和工作<br>应该分开吗？</div></div>
+      <div class="at" style="left:220px;top:110px"><div class="stk work round f0" style="--r:-12deg;--d:.35s;font-size:44px">Work</div></div>
+      <div class="at" style="left:1240px;top:440px"><div class="stk life round f0" style="--r:10deg;--d:.5s;font-size:44px">Life</div></div>
+      <div class="at center" style="top:620px"><div class="stk ink f1" style="--r:1deg;font-size:44px">对我来说，不需要刻意分开<small>因为工作本来就是生活的一部分</small></div></div>
     </section>
 
     <!-- 1 · Dream Board -->
-    <section class="slide" data-steps="2" data-ch="开场">
-      <div class="at" style="left:70px;top:90px"><div class="photo f0" style="--r:-2deg"><div class="tape"></div><img src="dream-board.jpg" width="880" height="660" alt="我的 Dream Board：旅行、朋友、family、想住的地方、大自然、想学的东西"></div></div>
-      <div class="at" style="left:1020px;top:140px"><div class="stk love f1" style="--r:5deg">里面没有<br>一个 job title</div></div>
-      <div class="at" style="left:1020px;top:400px"><div class="stk f2" style="--r:-2deg;font-size:36px"><span class="strike k2">我要做什么工作？</span></div></div>
-      <div class="at" style="left:1000px;top:540px"><div class="stk work f2" style="--r:3deg;--d:.7s;font-size:46px">我想过怎样的生活？</div></div>
+    <section class="slide" data-steps="2" data-ch="① Work 本来就在 Life 里面">
+      <div class="at" style="left:70px;top:90px"><div class="photo f0" style="--r:-2deg"><div class="tape"></div><img src="dream-board.jpg" width="880" height="660" alt="我的 Dream Board：旅行、朋友、家、大自然、想学的东西"></div></div>
+      <div class="at" style="left:1010px;top:170px"><div class="stk love f1" style="--r:5deg">上面没有一个<br>很大的 job title</div></div>
+      <div class="at" style="left:1000px;top:480px"><div class="stk work f2" style="--r:-3deg;font-size:48px">我想过<br>怎样的生活？</div></div>
     </section>
 
-    <!-- 2 · Balance: wrong question → right question -->
-    <section class="slide" data-steps="2" data-ch="开场">
+    <!-- 2 · Work-life balance: the day split in two -->
+    <section class="slide" data-steps="2" data-ch="① Work 本来就在 Life 里面">
+      <div class="at" style="left:110px;top:56px"><div class="stk f0" style="--r:-2deg;font-size:44px">Work-life balance</div></div>
+      <div class="at" style="left:220px;top:200px"><div class="bubble f1" style="--r:-3deg">下班了，不要找我。</div></div>
+      <div class="at" style="left:880px;top:210px"><div class="bubble f1" style="--r:3deg;--d:.25s">我要把工作和生活分开。</div></div>
+      <div class="tl">
+        <div class="lifeall"><span>Life</span></div>
+        <div class="seg l f0" style="left:0;width:480px;--d:.2s">Life</div>
+        <div class="seg w f0" style="left:480px;width:480px;--d:.35s">Work</div>
+        <div class="seg l f0" style="left:960px;width:320px;--d:.5s">Life</div>
+        <div class="hour" style="left:0">0:00</div><div class="hour" style="left:480px">9:00</div>
+        <div class="hour" style="left:960px">18:00</div><div class="hour" style="left:1280px">24:00</div>
+      </div>
+      <div class="at center" style="top:700px"><div class="stk work f2" style="--r:-1deg;--d:.4s;font-size:44px">那八个小时，难道不算我的 life 吗？</div></div>
+    </section>
+
+    <!-- 3 · Designing Your Life dashboard -->
+    <section class="slide" data-steps="2" data-ch="① Work 本来就在 Life 里面">
+      <div class="at" style="left:90px;top:40px"><div class="stk sun chip f0" style="--r:-3deg">Stanford · Designing Your Life</div></div>
+      <div class="at" style="left:190px;top:200px"><div class="dash f0" data-dash="intro" data-notes="1" style="--r:-1deg"></div></div>
+      <div class="at center" style="top:770px"><div class="stk ink f2" style="--r:1deg;font-size:32px">先看清楚自己现在在哪里，才知道接下来哪里需要调整</div></div>
+    </section>
+
+    <!-- 4 · What to avoid: work drains the other gauges -->
+    <section class="slide" data-steps="2" data-ch="① Work 本来就在 Life 里面">
+      <div class="at" style="left:110px;top:160px"><div class="dash f0" data-dash="drain" style="--r:-1.5deg"></div></div>
+      <div class="at" style="left:1060px;top:130px"><div class="stk f1" style="--r:3deg;font-size:30px;width:440px">真正要避免的，<br>不一定是：<br><span class="strike k1">Work 和 Life 应不应该分开</span></div></div>
+      <div class="at" style="left:1060px;top:470px"><div class="stk love f2" style="--r:-3deg;font-size:40px;width:440px">而是有没有<br>因为 Work<br>而忽略了其他地方</div></div>
+    </section>
+
+    <!-- 5 · Work is bigger than Job -->
+    <section class="slide" data-steps="2" data-ch="② 选工作，也在选生活方式">
+      <div class="at" style="left:90px;top:44px"><div class="stk f0" style="--r:-2deg;font-size:40px">在 Designing Your Life 里，<br>Work ≠ Job</div></div>
       <svg class="at" style="left:0;top:0" width="1600" height="900" viewBox="0 0 1600 900" aria-hidden="true">
-        <g class="f0">
-          <rect x="790" y="330" width="20" height="250" rx="10" fill="var(--ink)"/>
-          <rect x="710" y="570" width="180" height="22" rx="11" fill="var(--ink)"/>
-          <g class="wobble"><rect x="560" y="320" width="480" height="20" rx="10" fill="var(--ink)"/><circle cx="800" cy="330" r="20" fill="var(--sun)"/></g>
-        </g>
+        <circle pathLength="100" class="draw d2" cx="800" cy="500" r="320" fill="none" stroke="var(--life)" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 100" transform="rotate(-90 800 500)"/>
+        <circle cx="800" cy="500" r="150" fill="var(--white)" stroke="var(--ink)" stroke-width="7" class="f0"/>
+        <text x="800" y="520" text-anchor="middle" font-size="62" fill="var(--ink)" class="f0" style="font-family:var(--display)">Job</text>
       </svg>
-      <div class="at" style="left:560px;top:380px"><div class="panA"><div class="stk work f0" style="--r:-4deg;--d:.2s;font-size:40px">Work</div></div></div>
-      <div class="at" style="left:900px;top:380px"><div class="panB"><div class="stk life f0" style="--r:4deg;--d:.3s;font-size:40px">Life</div></div></div>
-      <div class="at center" style="top:110px"><div class="stk f0" style="--r:-1.5deg;--d:.4s;font-size:44px">work-life balance</div></div>
-      <div class="at" style="left:110px;top:640px"><div class="stk f1" style="--r:-2deg;font-size:34px"><span class="strike k1">要不要切开？</span></div></div>
-      <div class="at" style="left:560px;top:640px"><div class="stk work f1" style="--r:2deg;--d:.6s;font-size:40px">Work 应该放在 life 的什么位置？</div></div>
-      <div class="at center" style="top:780px"><div class="cite f2" style="font-family:var(--display);font-size:34px;color:var(--ink)">Work is part of life — but it should stay in the right place.</div></div>
+      <div class="at" style="left:610px;top:270px"><div class="stk play chip f1" style="--r:-6deg">Job title</div></div>
+      <div class="at" style="left:880px;top:280px"><div class="stk work chip f1" style="--r:5deg;--d:.1s">Salary</div></div>
+      <div class="at" style="left:960px;top:470px"><div class="stk love chip f1" style="--r:-4deg;--d:.2s">Company</div></div>
+      <div class="at" style="left:830px;top:660px"><div class="stk learn chip f1" style="--r:4deg;--d:.3s">Personal growth</div></div>
+      <div class="at" style="left:540px;top:600px"><div class="stk sun chip f1" style="--r:-5deg;--d:.4s">Benefit</div></div>
+      <div class="at" style="left:1150px;top:200px"><div class="stk life f2" style="--r:3deg;--d:.8s;font-size:44px">Work</div></div>
+      <div class="at" style="left:1150px;top:350px"><div class="stk f2" style="--r:-2deg;--d:1s;font-size:32px">你为什么工作</div></div>
+      <div class="at" style="left:1150px;top:470px"><div class="stk f2" style="--r:2deg;--d:1.15s;font-size:32px">什么样的工作<br>是值得的</div></div>
     </section>
 
-    <!-- 3 · Point 1: Dream Board morphs into the life circle -->
-    <section class="slide" data-steps="2" data-ch="① 工作不是生活的对面">
-      <svg class="at" style="left:0;top:0" width="1600" height="900" viewBox="0 0 1600 900" aria-hidden="true"><g id="lifeDonut"></g></svg>
-      <div class="morph"><img src="dream-board.jpg" alt="Dream Board"></div>
-      <div class="at center" style="top:752px"><div class="stk ink f2" style="--r:-1deg;font-size:34px">工作不是生活的对面，它本来就在生活里面</div></div>
-    </section>
-
-    <!-- 4 · Point 2: Nutrition → different paths -->
-    <section class="slide" data-steps="2" data-ch="② 选工作 = 选生活方式">
+    <!-- 6 · A job shapes a whole way of living -->
+    <section class="slide" data-steps="1" data-ch="② 选工作，也在选生活方式">
+      <div class="at" style="left:90px;top:44px"><div class="stk f0" style="--r:-2deg;font-size:40px">一份工作影响的，不只是职位本身</div></div>
       <svg class="at" style="left:0;top:0" width="1600" height="900" viewBox="0 0 1600 900" aria-hidden="true">
-        <path pathLength="100" class="draw d1" d="M360 430 C 650 430, 700 150, 1000 150" fill="none" stroke="var(--work)" stroke-width="10" stroke-linecap="round"/>
-        <path pathLength="100" class="draw d1" style="--d:.12s" d="M360 430 C 650 430, 700 290, 1000 290" fill="none" stroke="var(--life)" stroke-width="10" stroke-linecap="round"/>
-        <path pathLength="100" class="draw d1" style="--d:.24s" d="M360 430 C 650 430, 700 430, 1000 430" fill="none" stroke="var(--play)" stroke-width="10" stroke-linecap="round"/>
-        <path pathLength="100" class="draw d1" style="--d:.36s" d="M360 430 C 650 430, 700 570, 1000 570" fill="none" stroke="var(--love)" stroke-width="10" stroke-linecap="round"/>
-        <path pathLength="100" class="draw d1" style="--d:.48s" d="M360 430 C 650 430, 700 710, 1000 710" fill="none" stroke="var(--learn)" stroke-width="10" stroke-linecap="round"/>
+        <path pathLength="100" class="draw d1" d="M700 440 C 560 400, 470 320, 420 270" fill="none" stroke="var(--life)" stroke-width="9" stroke-linecap="round"/>
+        <path pathLength="100" class="draw d1" style="--d:.1s" d="M900 440 C 1040 400, 1130 320, 1180 270" fill="none" stroke="var(--play)" stroke-width="9" stroke-linecap="round"/>
+        <path pathLength="100" class="draw d1" style="--d:.2s" d="M700 540 C 560 590, 470 650, 420 690" fill="none" stroke="var(--learn)" stroke-width="9" stroke-linecap="round"/>
+        <path pathLength="100" class="draw d1" style="--d:.3s" d="M900 540 C 1040 590, 1130 650, 1180 690" fill="none" stroke="var(--work)" stroke-width="9" stroke-linecap="round"/>
       </svg>
-      <div class="at" style="left:190px;top:350px"><div class="stk life round f0" style="--r:-3deg;font-size:40px;padding:34px 30px;text-align:center">Nutrition<small>starting point</small></div></div>
-      <div class="at" style="left:1010px;top:112px"><div class="stk work f1" style="--r:-2deg;--d:.9s;font-size:30px">product development <small style="display:inline">· 现在</small></div></div>
-      <div class="at" style="left:1010px;top:252px"><div class="stk life f1" style="--r:2deg;--d:1s;font-size:30px">food</div></div>
-      <div class="at" style="left:1010px;top:392px"><div class="stk play f1" style="--r:-2deg;--d:1.1s;font-size:30px">health</div></div>
-      <div class="at" style="left:1010px;top:532px"><div class="stk love f1" style="--r:3deg;--d:1.2s;font-size:30px">不同的 industry</div></div>
-      <div class="at" style="left:1010px;top:672px"><div class="stk learn f1" style="--r:-2deg;--d:1.3s;font-size:30px">完全不同的方向 ？</div></div>
-      <div class="at" style="left:90px;top:650px"><div class="stk sun f2" style="--r:-2deg;font-size:34px;width:620px">这份工作，<br>会让我过怎样的生活？</div></div>
+      <div class="at center" style="top:430px"><div class="stk ink f0" style="--r:-2deg;font-size:48px">一份工作</div></div>
+      <div class="at" style="left:150px;top:190px"><div class="stk life f1" style="--r:-4deg;--d:.6s;font-size:36px">每天怎么生活</div></div>
+      <div class="at" style="left:1100px;top:190px"><div class="stk play f1" style="--r:4deg;--d:.7s;font-size:36px">学到什么</div></div>
+      <div class="at" style="left:150px;top:670px"><div class="stk learn f1" style="--r:3deg;--d:.8s;font-size:36px">接触什么机会</div></div>
+      <div class="at" style="left:1080px;top:670px"><div class="stk work f1" style="--r:-3deg;--d:.9s;font-size:36px">未来可能走去哪里</div></div>
     </section>
 
-    <!-- 5 · Point 3: separation is one way of doing it -->
-    <section class="slide" data-steps="2" data-ch="③ 分开是一种做法">
-      <div class="at center" style="top:90px"><div class="stk f0" style="--r:-2deg;font-size:84px;padding:18px 52px">分开，是一种做法</div></div>
+    <!-- 7 · The question changes -->
+    <section class="slide" data-steps="2" data-ch="② 选工作，也在选生活方式">
+      <div class="at" style="left:960px;top:110px"><div class="photo f0" style="--r:3deg"><div class="tape"></div><img src="dream-board.jpg" width="520" height="390" alt="我的 Dream Board"></div></div>
+      <div class="at" style="left:110px;top:130px"><div class="stk f0" style="--r:-2deg;--d:.2s;font-size:44px"><span class="strike k1">我要找什么工作？</span></div></div>
+      <div class="at" style="left:140px;top:300px"><div class="stk work f1" style="--r:2deg;--d:.6s;font-size:44px">我到底想做什么事情？<br>我想过怎样的生活？</div></div>
+      <div class="at center" style="top:660px"><div class="stk ink f2" style="--r:-1deg;font-size:56px;padding:18px 48px">工作是生活的一种选择</div></div>
+    </section>
+
+    <!-- 8 · Balance ≠ Separation → Prioritization -->
+    <section class="slide" data-steps="2" data-ch="③ Balance = Prioritization">
+      <div class="at" style="left:110px;top:70px"><div class="stk f0" style="--r:-2deg;font-size:36px">如果 Work 本来就在 Life 里面，<br>那是不是就不需要 boundary？</div></div>
+      <div class="at" style="left:1240px;top:70px"><div class="stk love round f1" style="--r:10deg;font-size:56px;padding:10px 36px">不是</div></div>
+      <div class="at" style="left:180px;top:400px"><div class="stk f1" style="--r:-3deg;--d:.3s;font-size:56px"><span class="strike k2">Separation</span></div></div>
+      <div class="at" style="left:720px;top:380px"><div class="stk life f2" style="--r:2deg;--d:.4s;font-size:72px;padding:18px 48px">Prioritization</div></div>
+      <div class="at" style="left:740px;top:580px"><div class="stk sun f2" style="--r:-2deg;--d:.8s;font-size:36px">先知道：当下什么对我比较重要</div></div>
+    </section>
+
+    <!-- 9 · Holiday example -->
+    <section class="slide" data-steps="3" data-ch="③ Balance = Prioritization">
+      <div class="at" style="left:150px;top:150px"><div class="phone f0" style="--r:-3deg">
+        <div class="status">🏖️ 放假中</div>
+        <div class="notif">📩 等了很久、<br>而且很重要的回复</div>
+        <div style="font-size:110px;line-height:1">🤔</div></div></div>
       <svg class="at" style="left:0;top:0" width="1600" height="900" viewBox="0 0 1600 900" aria-hidden="true">
-        <path pathLength="100" class="draw d2" d="M420 560 C 420 640, 640 640, 740 690" fill="none" stroke="var(--ink)" stroke-width="8" stroke-linecap="round"/>
-        <path pathLength="100" class="draw d2" d="M1180 560 C 1180 640, 960 640, 860 690" fill="none" stroke="var(--ink)" stroke-width="8" stroke-linecap="round"/>
+        <path pathLength="100" class="draw d1" d="M600 340 C 700 300, 760 250, 840 230" fill="none" stroke="var(--life)" stroke-width="9" stroke-linecap="round"/>
+        <path pathLength="100" class="draw d2" d="M600 480 C 700 520, 760 520, 840 510" fill="none" stroke="var(--play)" stroke-width="9" stroke-linecap="round"/>
       </svg>
-      <div class="at" style="left:140px;top:300px"><div class="stk play f1" style="--r:-3deg;font-size:48px;width:520px;text-align:center">🚪 分开<small>下班就是下班</small></div></div>
-      <div class="at" style="left:940px;top:300px"><div class="stk work f1" style="--r:3deg;--d:.2s;font-size:48px;width:520px;text-align:center">🔄 比较 flexible<small>想到就处理一下</small></div></div>
-      <div class="at center" style="top:700px"><div class="stk ink f2" style="--r:-1deg;font-size:44px">都是做法，目的是过我想过的生活</div></div>
+      <div class="at" style="left:860px;top:150px"><div class="stk life f1" style="--r:2deg;--d:.4s;font-size:34px;width:600px">很重要 → 回一下，<br>或者 forward 给 team ✅</div></div>
+      <div class="at" style="left:860px;top:440px"><div class="stk play f2" style="--r:-2deg;--d:.4s;font-size:34px;width:600px">不急，我更需要休息 →<br>先不处理 😴</div></div>
+      <div class="at" style="left:700px;top:690px"><div class="stk ink f3" style="--r:-1deg;font-size:40px">现阶段，我的 priority 是什么？</div></div>
     </section>
 
-    <!-- 6 · 9pm message: same action, different feeling -->
-    <section class="slide" data-steps="3" data-ch="③ 分开是一种做法">
-      <div class="at center" style="top:36px"><div class="stk f0" style="--r:-1deg;font-size:34px;padding:8px 24px">同样是晚上九点，回一个工作 message</div></div>
-      <div class="at" style="left:230px;top:140px"><div class="phone f1" style="--r:-4deg">
-        <div class="clock">21:00</div>
-        <div class="bubble sad">我真的不想处理了……<br>但是不回不行。</div>
-        <div class="face">😩</div></div></div>
-      <div class="at" style="left:970px;top:140px"><div class="phone f2" style="--r:4deg">
-        <div class="clock">21:00</div>
-        <div class="bubble glad">这个 project 我很在意，<br>Okay，回一下。</div>
-        <div class="face">🙂</div></div></div>
-      <div class="at" style="left:745px;top:300px"><div class="stk sun round f2" style="--r:-8deg;--d:.3s;font-size:44px">vs</div></div>
-      <div class="at center" style="top:650px"><div class="stk ink f3" style="--r:-1deg;font-size:42px">是我选择的，还是我被迫的？</div></div>
-    </section>
-
-    <!-- 7 · The way moves with life stages -->
-    <section class="slide" data-steps="2" data-ch="③ 分开是一种做法">
-      <div class="at" style="left:110px;top:70px"><div class="stk f0" style="--r:-2deg;font-size:44px">做法，不需要一辈子都一样</div></div>
-      <svg class="at" style="left:0;top:0" width="1600" height="900" viewBox="0 0 1600 900" aria-hidden="true">
-        <circle cx="480" cy="500" r="190" fill="none" stroke="var(--soft)" stroke-width="120"/>
-        <circle id="workArc" class="workarc" cx="480" cy="500" r="190" fill="none" stroke="var(--work)" stroke-width="120" pathLength="100" stroke-dasharray="0 100" transform="rotate(-90 480 500)"/>
-        <text x="480" y="490" text-anchor="middle" font-size="46" fill="var(--ink)" style="font-family:var(--display)">work</text>
-        <text x="480" y="540" text-anchor="middle" font-size="26" font-weight="700" fill="var(--muted)" style="font-family:var(--body)">在 life 里的位置</text>
-      </svg>
-      <div class="at" style="left:880px;top:330px;display:flex;flex-direction:column;gap:30px">
-        <div class="stk work when" style="--r:-2deg;font-size:34px">现在 · 想多学一点、多接触一点</div>
-        <div class="stk life when" style="--r:2deg;font-size:34px">以后 · family、health、travel</div>
+    <!-- 10 · Summary -->
+    <section class="slide" data-steps="3" data-ch="总结">
+      <div class="at" style="left:110px;top:60px"><div class="stk f0" style="--r:-2deg;font-size:40px">最后做一个总结</div></div>
+      <div class="at" style="left:150px;top:220px;display:flex;flex-direction:column;gap:46px">
+        <div class="stk work f1" style="--r:-1.5deg;font-size:40px">① 工作是生活的一部分 —— 很重要，但不是全部</div>
+        <div class="stk life f2" style="--r:1.5deg;font-size:40px">② 工作也是我选择的一种生活方式</div>
+        <div class="stk play f3" style="--r:-1deg;font-size:40px">③ 先问：现阶段，我人生真正的 priority 是什么？</div>
       </div>
     </section>
 
-    <!-- 7 · Conclusion: many questions collapse into one -->
-    <section class="slide" data-steps="2" data-ch="结尾">
-      <div class="at bg-board" style="left:360px;top:120px"><div class="photo f0" style="--r:-1.5deg"><div class="tape"></div><img src="dream-board.jpg" width="860" height="645" alt="Dream Board"></div></div>
-      <div class="at q" style="left:90px;top:120px;--dx:520px;--dy:300px"><div class="stk f1" style="--r:-4deg;font-size:32px">我应该找什么工作？</div></div>
-      <div class="at q" style="left:1120px;top:150px;--dx:-420px;--dy:270px"><div class="stk f1" style="--r:4deg;--d:.25s;font-size:32px">我要不要换工作？</div></div>
-      <div class="at q" style="left:80px;top:620px;--dx:530px;--dy:-200px"><div class="stk f1" style="--r:3deg;--d:.5s;font-size:32px">几点以后不要回 message？</div></div>
-      <div class="at q" style="left:1000px;top:640px;--dx:-380px;--dy:-220px"><div class="stk f1" style="--r:-3deg;--d:.75s;font-size:32px">Work 和 life 要不要分开？</div></div>
-      <div class="at center" style="top:370px"><div class="stk work f2" style="--r:-2deg;--d:.5s;font-size:76px;padding:20px 48px">我到底想过怎样的生活？</div></div>
+    <!-- 11 · Back to the dashboard -->
+    <section class="slide" data-steps="2" data-ch="总结">
+      <div class="at" style="left:110px;top:200px"><div class="dash f0" data-dash="final" style="--r:1deg"></div></div>
+      <div class="at" style="left:1080px;top:130px"><div class="stk f0" style="--r:3deg;--d:.4s;font-size:30px;width:420px">当我们知道<br>什么对自己最重要，<br>自然会知道：</div></div>
+      <div class="at" style="left:1060px;top:430px"><div class="stk work f1" style="--r:-3deg;--d:.6s;font-size:42px;width:440px">这个 dashboard<br>应该怎样分配</div></div>
+      <div class="at" style="left:1190px;top:680px"><div class="stk love round f2" style="--r:8deg;font-size:40px">谢谢大家</div></div>
     </section>
 
-    <!-- 8 · Only one line left -->
-    <section class="slide" data-steps="1" data-ch="结尾">
-      <div class="at center" style="top:320px"><div style="font-family:var(--body);font-weight:900;font-size:50px;line-height:1.6;width:1440px">
-        <div class="typing" style="--d:.4s">I'm not trying to separate work from life.</div>
-        <div class="typing" style="--d:2.8s;color:var(--work)">I'm trying to put work in the right place within my life.</div></div></div>
-      <div class="at" style="left:1230px;top:680px"><div class="stk love round f1" style="--r:8deg;font-size:40px">谢谢大家</div></div>
-    </section>
-
-    <div id="hud"><span id="chapter">开场</span><div id="bar"><i></i></div><span id="count">1 / 10</span></div>
+    <div id="hud"><span id="chapter">开场</span><div id="bar"><i></i></div><span id="count">1 / 12</span></div>
   </div>
   <div id="hint">→ / 空格 下一步 · ← 上一步 · F 全屏</div>
   <div id="nav"><button id="prev" aria-label="上一步">←</button><button id="full" aria-label="全屏">⛶</button><button id="next" aria-label="下一步">→</button></div>
@@ -262,51 +278,45 @@ svg .f0, svg .f1, svg .f2 { transform-box: fill-box; transform-origin: center; }
 
 <script>
 (() => {
-  const NS = "http://www.w3.org/2000/svg";
-  const C = n => getComputedStyle(document.documentElement).getPropertyValue("--" + n).trim();
-  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
-  const polar = (cx, cy, r, deg) => [cx + r * Math.cos(deg * Math.PI / 180), cy + r * Math.sin(deg * Math.PI / 180)];
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  // Life circle around the Dream Board (draws at click 1, after the photo shrinks)
-  const parts = [[18, C("life"), "health"], [18, C("love"), "family"], [16, C("play"), "friends"],
-                 [16, C("learn"), "learning"], [14, C("sun"), "play"], [18, C("work"), "work"]];
-  const g = document.getElementById("lifeDonut");
-  let acc = 0;
-  parts.forEach(([v, color, label], i) => {
-    const cx = 800, cy = 440, r = 240;
-    const a0 = -90 + acc * 3.6 + .8, a1 = -90 + (acc + v) * 3.6 - .8;
-    const [x0, y0] = polar(cx, cy, r, a0), [x1, y1] = polar(cx, cy, r, a1);
-    el("path", { d: `M${x0} ${y0} A${r} ${r} 0 0 1 ${x1} ${y1}`, fill: "none", stroke: color, "stroke-width": 120,
-      pathLength: 100, class: "draw d1", style: `--d:${.6 + i * .15}s` }, g);
-    const [lx, ly] = polar(cx, cy, r, -90 + (acc + v / 2) * 3.6);
-    const t = el("text", { x: lx, y: ly + 11, "text-anchor": "middle", "font-size": label === "work" ? 36 : 30, "font-weight": 900,
-      fill: label === "play" ? C("ink") : "#fff", class: "f1", style: `font-family:${C("body")};--d:${1 + i * .15}s` }, g);
-    t.textContent = label;
-    acc += v;
+  // ---------- Dashboard builder ----------
+  const ROWS = [["HEALTH", "life", "身心状态"], ["WORK", "work", "价值与贡献"], ["PLAY", "play", "快乐与探索"], ["LOVE", "love", "人与人之间的连接"]];
+  const dashes = {};
+  document.querySelectorAll("[data-dash]").forEach(d => {
+    const notes = d.dataset.notes === "1", trackW = notes ? 560 : 470;
+    d.innerHTML = `<div class="dash-tab">DASHBOARD</div><div class="dash-body"><div class="dash-lights">${ROWS.map(() => '<i class="light"></i>').join("")}</div>
+      <div class="dash-rows">${ROWS.map(([lbl, col, note], i) => `<div class="drow"><span class="dlabel">${lbl}</span>
+        <div class="track" style="width:${trackW}px"><div class="fill" style="--c:var(--${col})"></div><i class="tick" style="left:25%"></i><i class="tick" style="left:50%"></i><i class="tick" style="left:75%"></i></div>
+        ${notes ? `<span class="dnote f1" style="--d:${.5 + i * .15}s">${note}</span>` : ""}</div>`).join("")}</div></div>`;
+    dashes[d.dataset.dash] = { fills: [...d.querySelectorAll(".fill")], lights: [...d.querySelectorAll(".light")] };
   });
+  function setDash(name, values, warns = []) {
+    const d = dashes[name];
+    d.fills.forEach((f, i) => { f.style.setProperty("--v", values[i]); f.style.transitionDelay = (i * .12) + "s"; });
+    d.lights.forEach((l, i) => l.classList.toggle("warn", !!warns[i]));
+  }
+  const ZERO = [0, 0, 0, 0];
+
+  // slide index → (step) → dashboard state
+  const hooks = {
+    3: st => setDash("intro", st >= 1 ? [.55, .7, .3, .6] : ZERO),
+    4: () => setDash("drain", [.2, 1, .1, .25], [1, 0, 1, 1]),
+    11: st => setDash("final", st >= 1 ? [.7, .55, .55, .7] : [.3, .95, .15, .3], st >= 1 ? [] : [1, 0, 1, 1])
+  };
+  const owner = { intro: 3, drain: 4, final: 11 };
 
   // ---------- Deck engine ----------
   const slides = [...document.querySelectorAll(".slide")];
   const steps = s => +s.dataset.steps;
-  let si = 0, step = 0;
-
-  const workArc = document.getElementById("workArc");
-  const whens = [...document.querySelectorAll(".when")];
-  const hooks = {
-    7: st => {
-      const size = [0, 50, 25][st];
-      workArc.setAttribute("stroke-dasharray", `${size} ${100 - size}`);
-      whens.forEach((w, i) => w.classList.toggle("now", st === i + 1));
-    }
-  };
+  let si = 0, step = 0, hookTimer = 0;
 
   function render() {
     slides.forEach((s, i) => {
       s.classList.toggle("active", i === si);
       for (let k = 1; k <= 3; k++) s.classList.toggle("st" + k, i === si && step >= k);
     });
-    hooks[si]?.(step);
+    for (const name in owner) if (owner[name] !== si) setDash(name, ZERO);
+    clearTimeout(hookTimer);
+    if (hooks[si]) hookTimer = setTimeout(() => hooks[si](step), 120);
     document.getElementById("chapter").textContent = slides[si].dataset.ch;
     document.getElementById("count").textContent = `${si + 1} / ${slides.length}`;
     const total = slides.reduce((a, x) => a + steps(x) + 1, 0);
