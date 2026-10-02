@@ -194,9 +194,21 @@ svg .f0, svg .f1, svg .f2 { transform-box: fill-box; transform-origin: center; }
       <div class="at" style="left:90px;top:650px"><div class="stk sun f2" style="--r:-2deg;font-size:34px;width:620px">这份工作，<br>会让我过怎样的生活？</div></div>
     </section>
 
-    <!-- 5 · Point 3: 9pm message -->
-    <section class="slide" data-steps="3" data-ch="③ 那条线是谁画的">
-      <div class="at center" style="top:36px"><div class="stk f0" style="--r:-1deg;font-size:34px;padding:8px 24px">那条线，是不是我自己画的？</div></div>
+    <!-- 5 · Point 3: separation is one way of doing it -->
+    <section class="slide" data-steps="2" data-ch="③ 分开是一种做法">
+      <div class="at center" style="top:90px"><div class="stk f0" style="--r:-2deg;font-size:84px;padding:18px 52px">分开，是一种做法</div></div>
+      <svg class="at" style="left:0;top:0" width="1600" height="900" viewBox="0 0 1600 900" aria-hidden="true">
+        <path pathLength="100" class="draw d2" d="M420 560 C 420 640, 640 640, 740 690" fill="none" stroke="var(--ink)" stroke-width="8" stroke-linecap="round"/>
+        <path pathLength="100" class="draw d2" d="M1180 560 C 1180 640, 960 640, 860 690" fill="none" stroke="var(--ink)" stroke-width="8" stroke-linecap="round"/>
+      </svg>
+      <div class="at" style="left:140px;top:300px"><div class="stk play f1" style="--r:-3deg;font-size:48px;width:520px;text-align:center">🚪 分开<small>下班就是下班</small></div></div>
+      <div class="at" style="left:940px;top:300px"><div class="stk work f1" style="--r:3deg;--d:.2s;font-size:48px;width:520px;text-align:center">🔄 比较 flexible<small>想到就处理一下</small></div></div>
+      <div class="at center" style="top:700px"><div class="stk ink f2" style="--r:-1deg;font-size:44px">都是做法，目的是过我想过的生活</div></div>
+    </section>
+
+    <!-- 6 · 9pm message: same action, different feeling -->
+    <section class="slide" data-steps="3" data-ch="③ 分开是一种做法">
+      <div class="at center" style="top:36px"><div class="stk f0" style="--r:-1deg;font-size:34px;padding:8px 24px">同样是晚上九点，回一个工作 message</div></div>
       <div class="at" style="left:230px;top:140px"><div class="phone f1" style="--r:-4deg">
         <div class="clock">21:00</div>
         <div class="bubble sad">我真的不想处理了……<br>但是不回不行。</div>
@@ -209,9 +221,9 @@ svg .f0, svg .f1, svg .f2 { transform-box: fill-box; transform-origin: center; }
       <div class="at center" style="top:650px"><div class="stk ink f3" style="--r:-1deg;font-size:42px">是我选择的，还是我被迫的？</div></div>
     </section>
 
-    <!-- 6 · The line is mine, and it moves -->
-    <section class="slide" data-steps="2" data-ch="③ 那条线是谁画的">
-      <div class="at" style="left:110px;top:70px"><div class="stk f0" style="--r:-2deg;font-size:44px">那个 boundary，要 fit 你现在的生活</div></div>
+    <!-- 7 · The way moves with life stages -->
+    <section class="slide" data-steps="2" data-ch="③ 分开是一种做法">
+      <div class="at" style="left:110px;top:70px"><div class="stk f0" style="--r:-2deg;font-size:44px">做法，不需要一辈子都一样</div></div>
       <svg class="at" style="left:0;top:0" width="1600" height="900" viewBox="0 0 1600 900" aria-hidden="true">
         <circle cx="480" cy="500" r="190" fill="none" stroke="var(--soft)" stroke-width="120"/>
         <circle id="workArc" class="workarc" cx="480" cy="500" r="190" fill="none" stroke="var(--work)" stroke-width="120" pathLength="100" stroke-dasharray="0 100" transform="rotate(-90 480 500)"/>
@@ -242,7 +254,7 @@ svg .f0, svg .f1, svg .f2 { transform-box: fill-box; transform-origin: center; }
       <div class="at" style="left:1230px;top:680px"><div class="stk love round f1" style="--r:8deg;font-size:40px">谢谢大家</div></div>
     </section>
 
-    <div id="hud"><span id="chapter">开场</span><div id="bar"><i></i></div><span id="count">1 / 9</span></div>
+    <div id="hud"><span id="chapter">开场</span><div id="bar"><i></i></div><span id="count">1 / 10</span></div>
   </div>
   <div id="hint">→ / 空格 下一步 · ← 上一步 · F 全屏</div>
   <div id="nav"><button id="prev" aria-label="上一步">←</button><button id="full" aria-label="全屏">⛶</button><button id="next" aria-label="下一步">→</button></div>
@@ -282,7 +294,7 @@ svg .f0, svg .f1, svg .f2 { transform-box: fill-box; transform-origin: center; }
   const workArc = document.getElementById("workArc");
   const whens = [...document.querySelectorAll(".when")];
   const hooks = {
-    6: st => {
+    7: st => {
       const size = [0, 50, 25][st];
       workArc.setAttribute("stroke-dasharray", `${size} ${100 - size}`);
       whens.forEach((w, i) => w.classList.toggle("now", st === i + 1));
